@@ -55,6 +55,24 @@ class SessionRepositoryImpl implements SessionRepository {
   }
 
   @override
+  Future<Result<List<Session>>> monthlySessions({
+    required String classId,
+    required int year,
+    required int month,
+  }) async {
+    try {
+      final dtos = await _remote.sessionsBetween(
+        classId: classId,
+        startInclusive: DateTime(year, month, 1),
+        endInclusive: DateTime(year, month + 1, 0),
+      );
+      return Ok(dtos.map((dto) => dto.toEntity()).toList());
+    } catch (e) {
+      return Err(mapToFailure(e));
+    }
+  }
+
+  @override
   Future<Result<String>> classSecret(String classId) async {
     try {
       final secret = await _remote.classSecret(classId);

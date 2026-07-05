@@ -20,4 +20,8 @@ abstract final class SecureRandom {
 
   /// iBeacon major (1~65535)
   static int beaconMajor() => _random.nextInt(65535) + 1;
+
+  /// 학생 키오스크 PIN (4자리, 발급 시 1회 표시)
+  static String studentPin() =>
+      _random.nextInt(10000).toString().padLeft(4, '0');
 }

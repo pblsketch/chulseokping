@@ -8,22 +8,29 @@ import '../../data/datasources/beacon_scan_data_source.dart';
 import '../../data/datasources/supabase_remote_data_source.dart';
 import '../../data/repositories/attendance_repository_impl.dart';
 import '../../data/repositories/auth_repository_impl.dart';
+import '../../data/repositories/consent_repository_impl.dart';
+import '../../data/repositories/export_repository_impl.dart';
 import '../../data/repositories/kiosk_repository_impl.dart';
 import '../../data/repositories/roster_repository_impl.dart';
 import '../../data/repositories/session_repository_impl.dart';
 import '../../domain/repositories/attendance_repository.dart';
 import '../../domain/repositories/auth_repository.dart';
+import '../../domain/repositories/consent_repository.dart';
+import '../../domain/repositories/export_repository.dart';
 import '../../domain/repositories/kiosk_repository.dart';
 import '../../domain/repositories/roster_repository.dart';
 import '../../domain/repositories/session_repository.dart';
 import '../../domain/services/beacon_advertiser.dart';
 import '../../domain/services/beacon_scanner.dart';
+import '../../domain/usecases/build_neis_exception_export.dart';
 import '../../domain/usecases/check_in_by_ble.dart';
 import '../../domain/usecases/check_in_by_pin.dart';
+import '../../domain/usecases/confirm_guardian_consent.dart';
 import '../../domain/usecases/check_in_by_qr.dart';
 import '../../domain/usecases/end_session.dart';
 import '../../domain/usecases/get_active_session.dart';
 import '../../domain/usecases/issue_kiosk_device.dart';
+import '../../domain/usecases/set_student_pin.dart';
 import '../../domain/usecases/sign_in.dart';
 import '../../domain/usecases/start_session.dart';
 import '../../domain/usecases/sync_kiosk.dart';
@@ -67,6 +74,14 @@ final beaconAdvertiserProvider = Provider<BeaconAdvertiser>(
 
 final beaconScannerProvider = Provider<BeaconScanner>(
   (ref) => BeaconScanDataSource(),
+);
+
+final consentRepositoryProvider = Provider<ConsentRepository>(
+  (ref) => ConsentRepositoryImpl(ref.watch(remoteDataSourceProvider)),
+);
+
+final exportRepositoryProvider = Provider<ExportRepository>(
+  (ref) => ExportRepositoryImpl(),
 );
 
 /// 플랫폼 분기 (ST-2 Android 자동 / ST-3 iPhone 원탭) — 테스트에서 override.
@@ -115,4 +130,16 @@ final syncKioskProvider = Provider<SyncKiosk>(
 
 final checkInByPinProvider = Provider<CheckInByPin>(
   (ref) => CheckInByPin(ref.watch(kioskRepositoryProvider)),
+);
+
+final setStudentPinProvider = Provider<SetStudentPin>(
+  (ref) => SetStudentPin(ref.watch(rosterRepositoryProvider)),
+);
+
+final confirmGuardianConsentProvider = Provider<ConfirmGuardianConsent>(
+  (ref) => ConfirmGuardianConsent(ref.watch(consentRepositoryProvider)),
+);
+
+final buildNeisExceptionExportProvider = Provider<BuildNeisExceptionExport>(
+  (ref) => const BuildNeisExceptionExport(),
 );

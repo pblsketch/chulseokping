@@ -30,6 +30,22 @@ class RosterRepositoryImpl implements RosterRepository {
   }
 
   @override
+  Future<Result<void>> setStudentPin({
+    required String studentId,
+    required String pin,
+  }) async {
+    try {
+      await _remote.invokeCheckIn('set_student_pin', {
+        'student_id': studentId,
+        'pin': pin,
+      });
+      return const Ok(null);
+    } catch (e) {
+      return Err(mapToFailure(e));
+    }
+  }
+
+  @override
   Future<Result<List<Student>>> studentsOf(String classId) async {
     try {
       final profiles = await _remote.studentsOf(classId);

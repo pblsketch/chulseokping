@@ -18,4 +18,11 @@ abstract interface class SessionRepository {
   /// 교사 전용: 회전 QR 표시용 TOTP secret (RLS가 교사=자기 학급으로 제한).
   /// 검증은 항상 서버가 한다 — 이 값은 표시용 코드 생성에만 쓴다.
   Future<Result<String>> classSecret(String classId);
+
+  /// TE-4: 월별 일람표용 — 해당 월의 세션 목록(교시 라벨·날짜 매핑 원천).
+  Future<Result<List<Session>>> monthlySessions({
+    required String classId,
+    required int year,
+    required int month,
+  });
 }

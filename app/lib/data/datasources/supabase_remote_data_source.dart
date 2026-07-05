@@ -2,6 +2,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/attendance_record_dto.dart';
 import '../models/class_room_dto.dart';
+import '../models/consent_dto.dart';
 import '../models/profile_dto.dart';
 import '../models/session_dto.dart';
 
@@ -75,6 +76,29 @@ class SupabaseRemoteDataSource {
     return rows.map((r) => r['student_id'] as String).toSet();
   }
 
+  Future<List<ConsentDto>> fetchConsents() async {
+    final rows = await _client.from('consents').select();
+    return rows.map(ConsentDto.fromJson).toList();
+  }
+
+  /// PI-2: 보호자 동의 확인 기록 (RLS: 담당 학생 + 확인자=본인)
+  Future<ConsentDto> insertConsent({
+    required String studentId,
+    required String policyVersion,
+    required String teacherId,
+  }) async {
+    final row = await _client
+        .from('consents')
+        .insert({
+          'student_id': studentId,
+          'policy_version': policyVersion,
+          'guardian_confirmed_by': teacherId,
+        })
+        .select()
+        .single();
+    return ConsentDto.fromJson(row);
+  }
+
   // ── Sessions ──
   Future<SessionDto> startSession({
     required String classId,
@@ -120,6 +144,21 @@ class SupabaseRemoteDataSource {
         .limit(1)
         .maybeSingle();
     return row == null ? null : SessionDto.fromJson(row);
+  }
+
+  Future<List<SessionDto>> sessionsBetween({
+    required String classId,
+    required DateTime startInclusive,
+    required DateTime endInclusive,
+  }) async {
+    final rows = await _client
+        .from('sessions')
+        .select()
+        .eq('class_id', classId)
+        .gte('date', startInclusive.toIso8601String())
+        .lte('date', endInclusive.toIso8601String())
+        .order('date');
+    return rows.map(SessionDto.fromJson).toList();
   }
 
   /// 교사 전용(RLS) — 회전 QR 표시용 secret

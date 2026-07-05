@@ -132,11 +132,38 @@ class TeacherShell extends ConsumerWidget {
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          IconButton(
-                            tooltip: '키오스크 기기 발급',
-                            onPressed: () =>
-                                _issueKioskDevice(context, ref, classRoom),
-                            icon: const Icon(Icons.tablet_android),
+                          PopupMenuButton<String>(
+                            tooltip: '학급 메뉴',
+                            onSelected: (action) {
+                              final query =
+                                  '?name=${Uri.encodeComponent(classRoom.name)}';
+                              switch (action) {
+                                case 'roster':
+                                  context.push(
+                                    '/teacher/roster/${classRoom.id}$query',
+                                  );
+                                case 'ledger':
+                                  context.push(
+                                    '/teacher/ledger/${classRoom.id}$query',
+                                  );
+                                case 'kiosk':
+                                  _issueKioskDevice(context, ref, classRoom);
+                              }
+                            },
+                            itemBuilder: (context) => const [
+                              PopupMenuItem(
+                                value: 'roster',
+                                child: Text('명단 관리 (동의·PIN)'),
+                              ),
+                              PopupMenuItem(
+                                value: 'ledger',
+                                child: Text('월별 일람표·나이스 내보내기'),
+                              ),
+                              PopupMenuItem(
+                                value: 'kiosk',
+                                child: Text('키오스크 기기 발급'),
+                              ),
+                            ],
                           ),
                           const SizedBox(width: AppSpacing.sm),
                           FilledButton.icon(

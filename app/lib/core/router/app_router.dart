@@ -8,6 +8,8 @@ import '../../presentation/shared/auth_controller.dart';
 import '../../presentation/shared/login_page.dart';
 import '../../presentation/student/scan_page.dart';
 import '../../presentation/student/student_shell.dart';
+import '../../presentation/teacher/ledger_page.dart';
+import '../../presentation/teacher/roster_page.dart';
 import '../../presentation/teacher/session_page.dart';
 import '../../presentation/teacher/teacher_shell.dart';
 
@@ -51,6 +53,20 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             builder: (context, state) => SessionPage(
               sessionId: state.pathParameters['sessionId']!,
               classId: state.uri.queryParameters['classId'] ?? '',
+            ),
+          ),
+          GoRoute(
+            path: 'roster/:classId',
+            builder: (context, state) => RosterPage(
+              classId: state.pathParameters['classId']!,
+              className: state.uri.queryParameters['name'] ?? '학급',
+            ),
+          ),
+          GoRoute(
+            path: 'ledger/:classId',
+            builder: (context, state) => LedgerPage(
+              classId: state.pathParameters['classId']!,
+              className: state.uri.queryParameters['name'] ?? '학급',
             ),
           ),
         ],
