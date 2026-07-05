@@ -1,1 +1,6 @@
 include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  exclude:
+    # 벤더링한 서드파티 플러그인(빌드 스크립트만 수정) — 우리 lint 기준 미적용
+    - packages/**

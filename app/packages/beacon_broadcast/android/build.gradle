@@ -1,0 +1,34 @@
+// 출석핑 벤더링: 원본 0.3.1의 jcenter()/AGP 4.x buildscript가 최신 Gradle에서 빌드 불가라
+// 저장소에 포함해 빌드 스크립트만 현대화했다 (namespace 추가, buildscript 제거 — Dart/Kotlin 코드는 원본 그대로).
+// 원본: https://pub.dev/packages/beacon_broadcast (MIT, LICENSE 동봉)
+group 'pl.pszklarska.beaconbroadcast'
+version '1.0-SNAPSHOT'
+
+apply plugin: 'com.android.library'
+apply plugin: 'kotlin-android'
+
+android {
+    namespace 'pl.pszklarska.beaconbroadcast'
+    compileSdk 34
+
+    sourceSets {
+        main.java.srcDirs += 'src/main/kotlin'
+    }
+
+    defaultConfig {
+        minSdk 21
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    kotlinOptions {
+        jvmTarget = '17'
+    }
+}
+
+dependencies {
+    implementation 'org.altbeacon:android-beacon-library:2.19.3'
+}

@@ -23,6 +23,12 @@ dependencies:
   shared_preferences: ^2.5.5
   supabase_flutter: ^2.15.4
 
+# beacon_broadcast 0.3.1은 jcenter()/구형 AGP라 최신 Gradle에서 빌드 불가 →
+# packages/에 벤더링해 android 빌드 스크립트만 현대화 (Dart 코드는 원본 그대로)
+dependency_overrides:
+  beacon_broadcast:
+    path: packages/beacon_broadcast
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
