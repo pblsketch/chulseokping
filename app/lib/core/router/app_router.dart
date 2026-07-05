@@ -1,49 +1,70 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../domain/value_objects/user_role.dart';
 import '../../presentation/kiosk/kiosk_shell.dart';
-import '../../presentation/shared/role_select_page.dart';
+import '../../presentation/shared/auth_controller.dart';
+import '../../presentation/shared/login_page.dart';
+import '../../presentation/student/scan_page.dart';
 import '../../presentation/student/student_shell.dart';
+import '../../presentation/teacher/session_page.dart';
 import '../../presentation/teacher/teacher_shell.dart';
 
 /// 역할 기반 라우팅 (ARCHITECTURE §5).
-/// - student / teacher = 인증 사용자 역할
-/// - kiosk = 사용자 역할이 아니라 "기기 모드" (device_token 등록 시 진입)
-/// M0 스캐폴드: 인증 연동 전이므로 역할 선택 화면에서 수동 진입.
-enum AppRole { none, student, teacher, kiosk }
-
-class AppRoleNotifier extends Notifier<AppRole> {
-  @override
-  AppRole build() => AppRole.none;
-
-  void set(AppRole role) => state = role;
-}
-
-final appRoleProvider = NotifierProvider<AppRoleNotifier, AppRole>(
-  AppRoleNotifier.new,
-);
-
+/// - student / teacher = 인증 사용자 역할 (Supabase Auth + profiles.role)
+/// - kiosk = 사용자 역할이 아니라 "기기 모드" (M2에서 device_token 등록 진입)
 final appRouterProvider = Provider<GoRouter>((ref) {
-  final role = ref.watch(appRoleProvider);
+  final auth = ref.watch(authControllerProvider);
+
+  String homeOf(UserRole role) =>
+      role == UserRole.teacher ? '/teacher' : '/student';
 
   return GoRouter(
-    initialLocation: '/',
+    initialLocation: '/login',
     redirect: (context, state) {
-      // M1에서 Supabase Auth 세션 기반 redirect로 교체한다.
-      if (role == AppRole.none && state.matchedLocation != '/') return '/';
+      if (auth.isLoading) return null;
+      final profile = auth.value;
+      final atLogin = state.matchedLocation == '/login';
+      if (profile == null) return atLogin ? null : '/login';
+      if (atLogin) return homeOf(profile.role);
+      // 역할 경계: 학생이 교사 경로 접근(또는 반대) 시 자기 홈으로
+      final location = state.matchedLocation;
+      if (profile.role == UserRole.student && location.startsWith('/teacher')) {
+        return '/student';
+      }
+      if (profile.role == UserRole.teacher && location.startsWith('/student')) {
+        return '/teacher';
+      }
       return null;
     },
     routes: [
-      GoRoute(path: '/', builder: (context, state) => const RoleSelectPage()),
-      GoRoute(
-        path: '/student',
-        builder: (context, state) => const StudentShell(),
-      ),
-      GoRoute(path: '/kiosk', builder: (context, state) => const KioskShell()),
+      GoRoute(path: '/login', builder: (context, state) => const LoginPage()),
       GoRoute(
         path: '/teacher',
         builder: (context, state) => const TeacherShell(),
+        routes: [
+          GoRoute(
+            path: 'session/:sessionId',
+            builder: (context, state) => SessionPage(
+              sessionId: state.pathParameters['sessionId']!,
+              classId: state.uri.queryParameters['classId'] ?? '',
+            ),
+          ),
+        ],
       ),
+      GoRoute(
+        path: '/student',
+        builder: (context, state) => const StudentShell(),
+        routes: [
+          GoRoute(
+            path: 'scan',
+            builder: (context, state) => ScanPage(
+              sessionId: state.uri.queryParameters['sessionId'] ?? '',
+            ),
+          ),
+        ],
+      ),
+      GoRoute(path: '/kiosk', builder: (context, state) => const KioskShell()),
     ],
   );
 });

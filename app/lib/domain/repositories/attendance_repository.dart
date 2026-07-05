@@ -19,11 +19,22 @@ abstract interface class AttendanceRepository {
     required int minor,
   });
 
-  /// 교사 수동 상태 수정 (M1 — Edge Function 경유)
+  /// 교사 수동 상태 수정 (기존 행) — update_attendance Edge Function
   Future<Result<AttendanceRecord>> updateStatus({
     required String recordId,
     required AttendanceStatus status,
     AbsenceReason? reason,
+    RecognizedCode? reasonCode,
+    String? reasonDetail,
+  });
+
+  /// 교사 수동 기록 (미출석 학생 결석 처리 등, method=MANUAL) — update_attendance Edge Function
+  Future<Result<AttendanceRecord>> markManual({
+    required String sessionId,
+    required String studentId,
+    required AttendanceStatus status,
+    AbsenceReason? reason,
+    RecognizedCode? reasonCode,
     String? reasonDetail,
   });
 
