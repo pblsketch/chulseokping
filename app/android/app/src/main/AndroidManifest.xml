@@ -1,6 +1,17 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- BLE 비컨 (PRD §9: Android 12 권한분리 — 스캔은 위치 목적 아님) -->
+    <!-- API 30 이하 레거시: BLE 스캔에 위치 권한 필요 -->
+    <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" android:maxSdkVersion="30" />
+    <!-- API 31+: 근접 감지 전용 스캔 (neverForLocation = 좌표 미수집 선언, PI-3 정합) -->
+    <uses-permission android:name="android.permission.BLUETOOTH_SCAN" android:usesPermissionFlags="neverForLocation" />
+    <!-- 키오스크 비컨 광고 (KO-3) -->
+    <uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE" />
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+
     <application
-        android:label="chulseokping_app"
+        android:label="출석핑"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

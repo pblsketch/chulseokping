@@ -1,7 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'dart:io';
+
 import '../../data/datasources/beacon_advertise_data_source.dart';
+import '../../data/datasources/beacon_scan_data_source.dart';
 import '../../data/datasources/supabase_remote_data_source.dart';
 import '../../data/repositories/attendance_repository_impl.dart';
 import '../../data/repositories/auth_repository_impl.dart';
@@ -14,6 +17,8 @@ import '../../domain/repositories/kiosk_repository.dart';
 import '../../domain/repositories/roster_repository.dart';
 import '../../domain/repositories/session_repository.dart';
 import '../../domain/services/beacon_advertiser.dart';
+import '../../domain/services/beacon_scanner.dart';
+import '../../domain/usecases/check_in_by_ble.dart';
 import '../../domain/usecases/check_in_by_pin.dart';
 import '../../domain/usecases/check_in_by_qr.dart';
 import '../../domain/usecases/end_session.dart';
@@ -60,6 +65,13 @@ final beaconAdvertiserProvider = Provider<BeaconAdvertiser>(
   (ref) => BeaconAdvertiseDataSource(),
 );
 
+final beaconScannerProvider = Provider<BeaconScanner>(
+  (ref) => BeaconScanDataSource(),
+);
+
+/// 플랫폼 분기 (ST-2 Android 자동 / ST-3 iPhone 원탭) — 테스트에서 override.
+final isAndroidProvider = Provider<bool>((ref) => Platform.isAndroid);
+
 // ── Usecases ──
 final signInProvider = Provider<SignIn>(
   (ref) => SignIn(ref.watch(authRepositoryProvider)),
@@ -87,6 +99,10 @@ final updateAttendanceStatusProvider = Provider<UpdateAttendanceStatus>(
 
 final checkInByQrProvider = Provider<CheckInByQr>(
   (ref) => CheckInByQr(ref.watch(attendanceRepositoryProvider)),
+);
+
+final checkInByBleProvider = Provider<CheckInByBle>(
+  (ref) => CheckInByBle(ref.watch(attendanceRepositoryProvider)),
 );
 
 final issueKioskDeviceProvider = Provider<IssueKioskDevice>(
