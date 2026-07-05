@@ -15,6 +15,10 @@ abstract interface class SessionRepository {
   /// 학생앱: 소속 학급의 활성 세션 감지
   Future<Result<Session?>> activeSessionFor(String classId);
 
+  /// 학생앱: 활성 세션 실시간 감지 (Realtime). 교사가 세션을 종료·재시작해도
+  /// 화면을 새로고침하지 않아도 최신 세션으로 갱신된다.
+  Stream<Session?> watchActiveSession(String classId);
+
   /// 교사 전용: 회전 QR 표시용 TOTP secret (RLS가 교사=자기 학급으로 제한).
   /// 검증은 항상 서버가 한다 — 이 값은 표시용 코드 생성에만 쓴다.
   Future<Result<String>> classSecret(String classId);

@@ -35,6 +35,7 @@ import '../../domain/usecases/sign_in.dart';
 import '../../domain/usecases/start_session.dart';
 import '../../domain/usecases/sync_kiosk.dart';
 import '../../domain/usecases/update_attendance_status.dart';
+import '../../domain/usecases/watch_active_session.dart';
 import '../../domain/usecases/watch_live_attendance.dart';
 
 /// DI 와이어링 (ARCHITECTURE §2 core/di).
@@ -102,6 +103,10 @@ final endSessionProvider = Provider<EndSession>(
 
 final getActiveSessionProvider = Provider<GetActiveSession>(
   (ref) => GetActiveSession(ref.watch(sessionRepositoryProvider)),
+);
+
+final watchActiveSessionProvider = Provider<WatchActiveSession>(
+  (ref) => WatchActiveSession(ref.watch(sessionRepositoryProvider)),
 );
 
 final watchLiveAttendanceProvider = Provider<WatchLiveAttendance>(

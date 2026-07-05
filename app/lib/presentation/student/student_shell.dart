@@ -42,8 +42,9 @@ class StudentShell extends ConsumerWidget {
           final classRoom = list.first;
           final session = ref.watch(activeSessionProvider(classRoom.id));
           return RefreshIndicator(
+            // Realtime 구독이라 보통은 자동 갱신되지만, 재연결이 필요한 경우를 위해 남겨둠.
             onRefresh: () async =>
-                ref.refresh(activeSessionProvider(classRoom.id).future),
+                ref.invalidate(activeSessionProvider(classRoom.id)),
             child: ListView(
               physics: const AlwaysScrollableScrollPhysics(),
               padding: const EdgeInsets.all(AppSpacing.xl),

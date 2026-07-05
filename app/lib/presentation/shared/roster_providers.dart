@@ -10,11 +10,8 @@ final myClassesProvider = FutureProvider<List<ClassRoom>>((ref) async {
   return result.fold((classes) => classes, (failure) => throw failure.message);
 });
 
-/// 학급의 활성 세션 (없으면 null).
-final activeSessionProvider = FutureProvider.family<Session?, String>((
-  ref,
-  classId,
-) async {
-  final result = await ref.watch(getActiveSessionProvider).call(classId);
-  return result.fold((session) => session, (failure) => throw failure.message);
-});
+/// 학급의 활성 세션 (없으면 null) — Realtime 구독이라 교사가 세션을 종료·재시작해도
+/// 자동으로 갱신된다(수동 새로고침 불필요, 예전엔 1회성 조회라 값이 굳어 있었다).
+final activeSessionProvider = StreamProvider.family<Session?, String>(
+  (ref, classId) => ref.watch(watchActiveSessionProvider).call(classId),
+);

@@ -3,8 +3,14 @@
     <!-- API 30 이하 레거시: BLE 스캔에 위치 권한 필요 -->
     <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" android:maxSdkVersion="30" />
-    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" android:maxSdkVersion="30" />
-    <!-- API 31+: 근접 감지 전용 스캔 (neverForLocation = 좌표 미수집 선언, PI-3 정합) -->
+    <!-- ACCESS_FINE_LOCATION: maxSdkVersion 제한 금지 — dchs_flutter_beacon 0.6.9의
+         checkLocationServicesPermission()이 API31+에서도 BLUETOOTH_SCAN과 함께
+         이 권한의 승인 여부를 무조건 확인한다(neverForLocation 플래그를 실제로는 참조하지 않음).
+         maxSdkVersion=30으로 제한했더니 API31+ 기기에서 이 권한이 선언 자체가 안 돼
+         승인이 영원히 불가능해지고 비컨 스캔이 "항상 불가"로 고정되는 회귀가 있었다(2026-07-06).
+         좌표(GPS lat/lng)는 이 권한이 있어도 코드에서 전혀 읽지 않는다 — PI-3 회귀 테스트가 보증. -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <!-- API 31+: 근접 감지 전용 스캔 선언(메타데이터 의미) — 위 이유로 런타임 게이트는 아직 FINE_LOCATION에 걸림 -->
     <uses-permission android:name="android.permission.BLUETOOTH_SCAN" android:usesPermissionFlags="neverForLocation" />
     <!-- 키오스크 비컨 광고 (KO-3) -->
     <uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE" />

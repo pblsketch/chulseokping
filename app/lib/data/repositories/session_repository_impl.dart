@@ -55,6 +55,11 @@ class SessionRepositoryImpl implements SessionRepository {
   }
 
   @override
+  Stream<Session?> watchActiveSession(String classId) {
+    return _remote.watchActiveSession(classId).map((dto) => dto?.toEntity());
+  }
+
+  @override
   Future<Result<List<Session>>> monthlySessions({
     required String classId,
     required int year,

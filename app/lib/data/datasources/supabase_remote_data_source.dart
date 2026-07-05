@@ -146,6 +146,25 @@ class SupabaseRemoteDataSource {
     return row == null ? null : SessionDto.fromJson(row);
   }
 
+  /// 학생앱 실시간 세션 감지용. 교사가 세션을 종료하고 새로 시작해도
+  /// 학생이 화면을 새로고침할 필요 없이 최신 활성 세션으로 갱신된다
+  /// (예전엔 1회성 조회라 앱을 다시 열기 전까진 종료된 세션 ID를 들고 있었다).
+  Stream<SessionDto?> watchActiveSession(String classId) {
+    return _client
+        .from('sessions')
+        .stream(primaryKey: ['id'])
+        .eq('class_id', classId)
+        .map((rows) {
+          final active = rows.where((r) => r['status'] == 'ACTIVE').toList()
+            ..sort(
+              (a, b) => (b['started_at'] as String).compareTo(
+                a['started_at'] as String,
+              ),
+            );
+          return active.isEmpty ? null : SessionDto.fromJson(active.first);
+        });
+  }
+
   Future<List<SessionDto>> sessionsBetween({
     required String classId,
     required DateTime startInclusive,
