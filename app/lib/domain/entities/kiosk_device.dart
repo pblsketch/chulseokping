@@ -1,3 +1,14 @@
+/// 기기 발급 결과 — 토큰은 이 시점에만 노출된다(교사가 태블릿에 입력).
+class IssuedKioskDevice {
+  const IssuedKioskDevice({
+    required this.deviceToken,
+    required this.beaconMajor,
+  });
+
+  final String deviceToken;
+  final int beaconMajor;
+}
+
 /// 키오스크 기기. beacon minor는 저장하지 않는다(서버 시간 파생 — 회전).
 class KioskDevice {
   const KioskDevice({

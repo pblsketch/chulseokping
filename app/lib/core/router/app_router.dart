@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../domain/value_objects/user_role.dart';
 import '../../presentation/kiosk/kiosk_shell.dart';
+import '../../presentation/kiosk/pin_pad_page.dart';
 import '../../presentation/shared/auth_controller.dart';
 import '../../presentation/shared/login_page.dart';
 import '../../presentation/student/scan_page.dart';
@@ -22,13 +23,15 @@ final appRouterProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     initialLocation: '/login',
     redirect: (context, state) {
+      final location = state.matchedLocation;
+      // 키오스크는 사용자 역할이 아니라 "기기 모드" — 로그인 없이 진입 (ARCHITECTURE §5)
+      if (location.startsWith('/kiosk')) return null;
       if (auth.isLoading) return null;
       final profile = auth.value;
-      final atLogin = state.matchedLocation == '/login';
+      final atLogin = location == '/login';
       if (profile == null) return atLogin ? null : '/login';
       if (atLogin) return homeOf(profile.role);
       // 역할 경계: 학생이 교사 경로 접근(또는 반대) 시 자기 홈으로
-      final location = state.matchedLocation;
       if (profile.role == UserRole.student && location.startsWith('/teacher')) {
         return '/student';
       }
@@ -64,7 +67,19 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           ),
         ],
       ),
-      GoRoute(path: '/kiosk', builder: (context, state) => const KioskShell()),
+      GoRoute(
+        path: '/kiosk',
+        builder: (context, state) => const KioskShell(),
+        routes: [
+          GoRoute(
+            path: 'pin',
+            builder: (context, state) => PinPadPage(
+              sessionId: state.uri.queryParameters['sessionId'] ?? '',
+              deviceToken: state.uri.queryParameters['deviceToken'] ?? '',
+            ),
+          ),
+        ],
+      ),
     ],
   );
 });

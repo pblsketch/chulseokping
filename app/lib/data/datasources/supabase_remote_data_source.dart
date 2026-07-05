@@ -132,6 +132,24 @@ class SupabaseRemoteDataSource {
     return row == null ? null : row['qr_secret'] as String;
   }
 
+  // ── Kiosk ──
+  /// 교사 발급 (KO-1) — RLS(kiosk_devices_teacher_all)가 자기 학급으로 제한.
+  Future<void> createKioskDevice({
+    required String classId,
+    required String teacherId,
+    required String deviceToken,
+    required int beaconMajor,
+    required String beaconSecret,
+  }) async {
+    await _client.from('kiosk_devices').insert({
+      'class_id': classId,
+      'teacher_id': teacherId,
+      'device_token': deviceToken,
+      'beacon_major': beaconMajor,
+      'beacon_secret': beaconSecret,
+    });
+  }
+
   // ── Attendance (쓰기 = Edge Function 전용) ──
   Future<Map<String, dynamic>> invokeCheckIn(
     String functionName,

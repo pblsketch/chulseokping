@@ -42,6 +42,56 @@ class TeacherShell extends ConsumerWidget {
     }
   }
 
+  /// KO-1: 기기 토큰 발급 — 토큰은 이 다이얼로그에서만 노출된다.
+  Future<void> _issueKioskDevice(
+    BuildContext context,
+    WidgetRef ref,
+    ClassRoom classRoom,
+  ) async {
+    final result = await ref.read(issueKioskDeviceProvider).call(classRoom.id);
+    if (!context.mounted) return;
+    switch (result) {
+      case Ok(:final value):
+        await showDialog<void>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('키오스크 기기 발급'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  '교실 태블릿의 "키오스크 모드"에서 이 토큰을 입력하세요.\n'
+                  '토큰은 지금만 표시돼요 — 분실 시 재발급하세요.',
+                  style: AppTypography.caption,
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                SelectableText(
+                  value.deviceToken,
+                  style: AppTypography.mono.copyWith(fontSize: 20),
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                Text(
+                  '비컨 major: ${value.beaconMajor}',
+                  style: AppTypography.caption,
+                ),
+              ],
+            ),
+            actions: [
+              FilledButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('확인'),
+              ),
+            ],
+          ),
+        );
+      case Err(:final failure):
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(failure.message)));
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final classes = ref.watch(myClassesProvider);
@@ -79,10 +129,23 @@ class TeacherShell extends ConsumerWidget {
                         '초대코드 ${classRoom.inviteCode}',
                         style: AppTypography.caption,
                       ),
-                      trailing: FilledButton.icon(
-                        onPressed: () => _startSession(context, ref, classRoom),
-                        icon: const Icon(Icons.play_arrow),
-                        label: const Text('세션 시작'),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            tooltip: '키오스크 기기 발급',
+                            onPressed: () =>
+                                _issueKioskDevice(context, ref, classRoom),
+                            icon: const Icon(Icons.tablet_android),
+                          ),
+                          const SizedBox(width: AppSpacing.sm),
+                          FilledButton.icon(
+                            onPressed: () =>
+                                _startSession(context, ref, classRoom),
+                            icon: const Icon(Icons.play_arrow),
+                            label: const Text('세션 시작'),
+                          ),
+                        ],
                       ),
                     ),
                   );
