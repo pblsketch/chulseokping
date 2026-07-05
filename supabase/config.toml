@@ -397,3 +397,6 @@ verify_jwt = false
 # DEPLOY GATE: on hosted Supabase, restore verify_jwt = true for check_in_qr / check_in_ble
 # (hosted gateway verifies asymmetric user JWTs; keep in-function getUser() as the authZ layer).
 # check_in_pin stays false - device_token is its credential.
+
+[functions.update_attendance]
+verify_jwt = false  # local gateway cannot verify ES256 user JWT; in-function getUser() authenticates
