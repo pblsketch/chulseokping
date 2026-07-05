@@ -403,3 +403,6 @@ verify_jwt = false  # local gateway cannot verify ES256 user JWT; in-function ge
 
 [functions.kiosk_sync]
 verify_jwt = false  # device_token is the credential
+
+[functions.set_student_pin]
+verify_jwt = false  # in-function getUser() authenticates (local gateway ES256 limitation)
