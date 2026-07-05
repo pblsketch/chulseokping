@@ -400,3 +400,6 @@ verify_jwt = false
 
 [functions.update_attendance]
 verify_jwt = false  # local gateway cannot verify ES256 user JWT; in-function getUser() authenticates
+
+[functions.kiosk_sync]
+verify_jwt = false  # device_token is the credential

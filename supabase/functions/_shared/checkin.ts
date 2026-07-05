@@ -105,6 +105,22 @@ export async function loadActiveSession(
   return data as ActiveSession | null;
 }
 
+/** 학급의 현재 활성 세션 (키오스크 sync용) */
+export async function loadActiveSessionOfClass(
+  svc: SupabaseClient,
+  classId: string,
+): Promise<ActiveSession | null> {
+  const { data } = await svc
+    .from("sessions")
+    .select("id, class_id, type, period, status")
+    .eq("class_id", classId)
+    .eq("status", "ACTIVE")
+    .order("started_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  return data as ActiveSession | null;
+}
+
 /** PI-2: 동의 미확인 학생은 서버가 수집 거부 */
 export async function hasConsent(
   svc: SupabaseClient,
