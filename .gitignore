@@ -1,0 +1,52 @@
+# Flutter / Dart
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+build/
+*.lock.bak
+.fvm/
+
+# IDE
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+
+# Android (앱은 app/ 하위 — 루트 앵커 방지 위해 **/ 사용)
+**/android/.gradle/
+**/android/local.properties
+**/android/key.properties
+*.keystore
+*.jks
+
+# iOS
+**/ios/Pods/
+**/ios/.symlinks/
+**/ios/Flutter/Flutter.framework
+**/ios/Flutter/Flutter.podspec
+*.mode1v3
+*.mode2v3
+*.pbxuser
+xcuserdata/
+
+# macOS
+.DS_Store
+
+# Env / secrets
+.env
+.env.*
+!.env.example
+supabase/.branches/
+supabase/.temp/
+
+# Misc
+*.log
+coverage/
+
+# 에이전트 세션 상태 (커밋 금지)
+.omc/
+.fablize/
