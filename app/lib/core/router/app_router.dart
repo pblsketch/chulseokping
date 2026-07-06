@@ -5,8 +5,11 @@ import '../../domain/value_objects/user_role.dart';
 import '../../presentation/kiosk/kiosk_shell.dart';
 import '../../presentation/kiosk/pin_pad_page.dart';
 import '../../presentation/shared/auth_controller.dart';
+import '../../presentation/shared/forgot_password_page.dart';
 import '../../presentation/shared/login_page.dart';
+import '../../presentation/shared/teacher_sign_up_page.dart';
 import '../../presentation/student/scan_page.dart';
+import '../../presentation/student/student_link_page.dart';
 import '../../presentation/student/student_shell.dart';
 import '../../presentation/teacher/ledger_page.dart';
 import '../../presentation/teacher/roster_page.dart';
@@ -30,9 +33,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       if (location.startsWith('/kiosk')) return null;
       if (auth.isLoading) return null;
       final profile = auth.value;
-      final atLogin = location == '/login';
-      if (profile == null) return atLogin ? null : '/login';
-      if (atLogin) return homeOf(profile.role);
+      // 미로그인 공개 경로 (M5: 가입·재설정·학생 연결)
+      const publicPaths = {'/login', '/signup', '/forgot', '/link'};
+      final atPublic = publicPaths.contains(location);
+      if (profile == null) return atPublic ? null : '/login';
+      if (atPublic) return homeOf(profile.role);
       // 역할 경계: 학생이 교사 경로 접근(또는 반대) 시 자기 홈으로
       if (profile.role == UserRole.student && location.startsWith('/teacher')) {
         return '/student';
@@ -44,6 +49,18 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     },
     routes: [
       GoRoute(path: '/login', builder: (context, state) => const LoginPage()),
+      GoRoute(
+        path: '/signup',
+        builder: (context, state) => const TeacherSignUpPage(),
+      ),
+      GoRoute(
+        path: '/forgot',
+        builder: (context, state) => const ForgotPasswordPage(),
+      ),
+      GoRoute(
+        path: '/link',
+        builder: (context, state) => const StudentLinkPage(),
+      ),
       GoRoute(
         path: '/teacher',
         builder: (context, state) => const TeacherShell(),

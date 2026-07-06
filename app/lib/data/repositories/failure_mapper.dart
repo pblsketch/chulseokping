@@ -32,6 +32,11 @@ Failure mapToFailure(Object error) {
 
 String? _korean(String? code) => switch (code) {
   'not_a_member' => '이 학급 명단에 없어요',
+  'not_your_class' => '내 학급이 아니에요',
+  'not_your_student' => '담당 학생이 아니에요',
+  'too_many_students' => '한 번에 추가할 수 있는 인원을 넘었어요',
+  'invalid_code_format' => '연결 코드 형식이 올바르지 않아요',
+  'invalid_or_expired_code' => '연결 코드가 만료됐거나 올바르지 않아요 — 선생님께 재발급을 요청하세요',
   'not_class_teacher' => '이 학급의 담당 교사가 아니에요',
   'class_mismatch' => '기기와 세션의 학급이 달라요',
   'student_not_found' => '학생을 찾을 수 없어요',

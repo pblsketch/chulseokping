@@ -30,6 +30,27 @@ class AuthController extends AsyncNotifier<UserProfile?> {
     );
   }
 
+  /// 학생 연결 코드 로그인 (M5). 성공 시 null, 실패 시 Failure 반환.
+  Future<Failure?> signInWithLinkCode(String code) async {
+    state = const AsyncLoading();
+    final result = await ref.read(signInWithLinkCodeProvider).call(code);
+    return result.fold(
+      (profile) {
+        state = AsyncData(profile);
+        return null;
+      },
+      (failure) {
+        state = const AsyncData(null);
+        return failure;
+      },
+    );
+  }
+
+  /// 회원가입 완료 등 외부에서 확정된 프로필 반영 — 라우터 redirect 트리거.
+  void setProfile(UserProfile profile) {
+    state = AsyncData(profile);
+  }
+
   Future<void> signOut() async {
     await ref.read(authRepositoryProvider).signOut();
     state = const AsyncData(null);

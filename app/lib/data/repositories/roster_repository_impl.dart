@@ -1,6 +1,9 @@
 import '../../core/error/failure.dart';
 import '../../core/result/result.dart';
 import '../../domain/entities/class_room.dart';
+import '../../domain/entities/created_student.dart';
+import '../../domain/entities/issued_link_code.dart';
+import '../../domain/entities/new_student_entry.dart';
 import '../../domain/entities/student.dart';
 import '../../domain/repositories/roster_repository.dart';
 import '../../domain/value_objects/user_role.dart';
@@ -40,6 +43,57 @@ class RosterRepositoryImpl implements RosterRepository {
         'pin': pin,
       });
       return const Ok(null);
+    } catch (e) {
+      return Err(mapToFailure(e));
+    }
+  }
+
+  @override
+  Future<Result<List<CreatedStudent>>> createStudents({
+    required String classId,
+    required List<NewStudentEntry> entries,
+  }) async {
+    try {
+      final response = await _remote.invokeCheckIn('create_students', {
+        'class_id': classId,
+        'students': [
+          for (final e in entries)
+            {
+              'name': e.name,
+              'student_number': e.studentNumber,
+              'guardian_consented': e.guardianConsented,
+            },
+        ],
+      });
+      final rows = (response['students'] as List).cast<Map<String, dynamic>>();
+      return Ok([
+        for (final row in rows)
+          CreatedStudent(
+            ok: row['ok'] as bool,
+            name: row['name'] as String? ?? '',
+            studentNumber: row['student_number'] as String? ?? '',
+            studentId: row['student_id'] as String?,
+            linkCode: row['link_code'] as String?,
+            error: row['error'] as String?,
+          ),
+      ]);
+    } catch (e) {
+      return Err(mapToFailure(e));
+    }
+  }
+
+  @override
+  Future<Result<IssuedLinkCode>> issueLinkCode(String studentId) async {
+    try {
+      final response = await _remote.invokeCheckIn('issue_link_code', {
+        'student_id': studentId,
+      });
+      return Ok(
+        IssuedLinkCode(
+          code: response['link_code'] as String,
+          expiresAt: DateTime.parse(response['expires_at'] as String),
+        ),
+      );
     } catch (e) {
       return Err(mapToFailure(e));
     }

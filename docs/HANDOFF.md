@@ -1,6 +1,6 @@
-# 출석핑 — Claude Code 핸드오프 (2026-07-06 갱신)
+# 출석핑 — Claude Code 핸드오프 (2026-07-06 갱신 2차: M5 완료)
 
-> 이 저장소(`E:\github\chulseokping`)에서 **Claude Code를 열고** 아래 "붙여넣기 프롬프트"를 그대로 입력하면 이어서 개발할 수 있다. M0~M4 구현 + 실기기 검증 + 오픈소스 공개 준비까지 끝났고, 다음은 **M5(계정·온보딩) → M6(학급·명단 관리) → 백로그 P0 → M7(학교 관리)** 순서다.
+> 이 저장소(`E:\github\chulseokping`)에서 **Claude Code를 열고** 아래 "붙여넣기 프롬프트"를 그대로 입력하면 이어서 개발할 수 있다. M0~M5(계정·온보딩) 구현까지 끝났고, 다음은 **M6(학급·명단 관리) → 백로그 P0 → M7(학교 관리)** 순서다.
 
 ---
 
@@ -16,19 +16,17 @@
 4. docs/ARCHITECTURE.md              (클린 아키텍처 경계)
 
 [현재 상태 — 요약]
-- M0(백엔드)~M4(나이스 내보내기·동의·PIN) 구현 완료. 실기기(교사 태블릿 비컨 ↔ 학생 폰)에서 BLE 자동 출석·회전 QR·실시간 반영 모두 검증 통과.
-- flutter analyze 0건, 테스트 72개 통과. 최근 커밋 d525edc (LICENSE+README).
+- M0(백엔드)~M5(계정·온보딩) 구현 완료. 실기기에서 BLE 자동 출석·회전 QR·실시간 반영 검증 통과(M4까지).
+- M5 학생 계정 모델 확정: **하이브리드** — 교사 일괄 생성(내부 이메일, service role)이 기본, invite_code는 "학생 기기 연결 코드"로 재정의(student_link_codes, 해시 저장·48h·1회용).
+- flutter analyze 0건, 앱 테스트 85개 + 백엔드 통합 32개 통과.
 - 프로젝트 방향: 상용 서비스가 아니라 GitHub 오픈소스 공개 (법적 쟁점은 배포자 고지 프레임 — docs/LAUNCH_GATE_LEGAL_RESEARCH.md §8).
-- 미커밋 파일 있음: docs/HANDOFF.md(갱신본), docs/IMPROVEMENT_BACKLOG.md(M5~M7 섹션).
+- 미커밋: M5 구현 전체(마이그레이션 2·Edge Function 3·앱 페이지 3·테스트) — 커밋은 사용자 요청 시.
 
 [해야 할 일 — 이 순서로]
-0) git status로 미커밋 문서 확인 → 커밋 (docs: 핸드오프 갱신 + M5~M7 기능 공백 분석)
-1) M5 착수 전 최대 설계 결정을 나와 확정: 학생 계정 모델.
-   권장안 = 교사 일괄 생성(학번 기반 내부 계정, Edge Function service role 생성, 학생 이메일 불요).
-   대안(자가 가입/초대코드)과의 트레이드오프를 backlog M5 섹션 기준으로 나에게 제시하고 결정받아라.
-2) 결정 후 M5 설계·구현: 교사 회원가입(이메일 인증), 학생 계정 일괄 생성, 비밀번호 재설정(교사=이메일/학생=담임 리셋), 14세 미만 동의 흐름 통합.
-3) M6: 학급 CRUD(⚠ class_secrets 동시 발급 필수 — HANDOFF 함정 목록 참조), 학생 일괄 등록, 전학/졸업 처리.
-4) 이후 백로그 P0(세션 시간창 → 기기 바인딩 → 헤드카운트) → M7(학교 단위 관리).
+1) M5 실기기 확인(선택): 교사 회원가입 → 학생 추가 → 연결 코드로 학생 폰 연결 → BLE 출석까지 한 사이클.
+2) M6: 학급 CRUD(⚠ class_secrets 동시 발급 필수 — HANDOFF 함정 목록 참조), 학생 제거/전학/졸업(soft delete), 연도 진급.
+   (학생 일괄 등록은 M5에서 create_students + 명단 붙여넣기 UI로 선구현됨 — M6는 학급 생성 흐름에 통합만.)
+3) 이후 백로그 P0(세션 시간창 → 기기 바인딩 → 헤드카운트) → M7(학교 단위 관리).
 
 [절대 규칙 — 어기면 안 됨]
 - 출석 쓰기 = Edge Function 경유만. 클라이언트 직접 INSERT 금지.
@@ -38,15 +36,16 @@
 - 개발은 더미 데이터만. 커밋/푸시는 내가 요청할 때만.
 - 변경 후 flutter analyze + 관련 flutter test 통과로 완료 판단. 실패는 출력과 함께 보고.
 
-지금 0)부터 시작해라.
+지금 1)부터 시작해라.
 ```
 
 ---
 
 ## 현재 상태 (사람용 상세)
 
-- **구현**: M0~M4 + 실기기 회귀 수정 2라운드. BLE 자동 출석이 실기기에서 실제 성공(2026-07-06).
-- **커밋 이력**: `d525edc`(LICENSE+README) ← `af0f52e`(조사 문서 6건) ← `90e06dd`(실기기 회귀+BYOD 교사 비컨)
+- **구현**: M0~M5. BLE 자동 출석 실기기 성공(2026-07-06). M5 = 교사 회원가입(이메일 OTP)·비밀번호 재설정(recovery OTP)·학생 일괄 생성(create_students)·연결 코드 발급/재발급(issue_link_code)·학생 기기 연결(redeem_link_code + StudentLinkPage)·동의 생성 통합(guardian_consented).
+- **M5 계약 요지**: 연결 코드 = 32자 알파벳(I/O/0/1 제외)×12자(60bit), DB엔 sha256 해시만, 48시간·1회용, redeem 시 내부 비밀번호 회전. 학생 내부 이메일 `stu-<uuid>@student.chulseokping.internal`.
+- **커밋 이력**: `f4baa51`(핸드오프+백로그) ← `d525edc`(LICENSE+README) ← `af0f52e`(조사 문서 6건)
 - **오픈소스 준비 완료**: Apache-2.0, README 배포자 법적 고지, 시크릿 스캔 통과. 남은 것: main 병합·푸시·저장소 Public 전환(사용자 명시 요청 시).
 
 ## ⚠ 함정 목록 (실기기에서 피 흘려 배운 것)
@@ -59,6 +58,9 @@
 | 비컨 포맷 | 송신은 반드시 iBeacon layout + manufacturerId 0x004C (수신 dchs_flutter_beacon은 iBeacon만 파싱) |
 | fakeAsync | Riverpod 컨트롤러 타이머 테스트에서 fakeAsync 동작 안 함 — @visibleForTesting static Duration 패턴 사용 |
 | Edge Function 503 | 재부팅 후 supabase start가 edge_runtime을 못 띄우는 경우 있음 — stop→start로 해결 |
+| CLI secure-by-default | `npx supabase`(버전 미고정)가 CLI 2.109+로 올라가면 public 스키마에서 API 롤(anon/authenticated/**service_role 포함**)의 SELECT/INSERT/UPDATE/DELETE 기본 GRANT가 사라짐 → service role조차 permission denied, 통합 테스트 전멸. 해결: `20260706000003_api_role_grants.sql`(명시 GRANT + default privileges). 새 스키마 마이그레이션은 이 파일 이후 순서면 자동 적용됨 |
+| Docker E: 마운트 | Docker Desktop이 절전/강제종료 후 E: 드라이브 WSL 마운트가 깨지면 supabase start가 "mkdir /run/desktop/mnt/host/e: file exists"로 실패 — Docker Desktop 종료 → `wsl --shutdown` → Docker Desktop 재시작으로 해결 |
+| 이메일 OTP 로컬 | 교사 가입/재설정 OTP는 config.toml `enable_confirmations=true` + `supabase/templates/*.html`({{ .Token }} 노출) 전제. 메일은 Mailpit(http://127.0.0.1:54324)에서 확인. config 변경은 supabase stop→start 필요 |
 
 ## 환경 부팅 (재부팅 후)
 

@@ -29,6 +29,54 @@ class SupabaseRemoteDataSource {
 
   String? get currentUserId => _client.auth.currentUser?.id;
 
+  // ── Auth (M5 계정·온보딩) ──
+
+  /// 교사 회원가입. 반환 true = 세션 즉시 발급(이메일 인증 비활성 환경).
+  Future<bool> signUpTeacher({
+    required String email,
+    required String password,
+  }) async {
+    final response = await _client.auth.signUp(
+      email: email,
+      password: password,
+    );
+    return response.session != null;
+  }
+
+  /// 가입 확인 OTP 검증 — 성공 시 세션 발급
+  Future<void> verifySignUpOtp({
+    required String email,
+    required String token,
+  }) =>
+      _client.auth.verifyOTP(type: OtpType.signup, email: email, token: token);
+
+  /// 본인 프로필 행 생성 (RLS profiles_insert_own)
+  Future<void> insertOwnProfile({
+    required String userId,
+    required String role,
+    required String name,
+  }) => _client.from('profiles').insert({
+    'id': userId,
+    'role': role,
+    'name': name,
+  });
+
+  Future<void> requestPasswordReset(String email) =>
+      _client.auth.resetPasswordForEmail(email);
+
+  /// 재설정 OTP 검증 — 성공 시 임시 세션 발급(이어서 updatePassword)
+  Future<void> verifyRecoveryOtp({
+    required String email,
+    required String token,
+  }) => _client.auth.verifyOTP(
+    type: OtpType.recovery,
+    email: email,
+    token: token,
+  );
+
+  Future<void> updatePassword(String newPassword) =>
+      _client.auth.updateUser(UserAttributes(password: newPassword));
+
   Future<ProfileDto?> fetchProfile(String userId) async {
     final row = await _client
         .from('profiles')

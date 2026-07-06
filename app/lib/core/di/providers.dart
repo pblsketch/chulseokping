@@ -27,9 +27,18 @@ import '../../domain/services/teacher_beacon_store.dart';
 import '../../domain/usecases/build_neis_exception_export.dart';
 import '../../domain/usecases/check_in_by_ble.dart';
 import '../../domain/usecases/check_in_by_pin.dart';
+import '../../domain/usecases/complete_teacher_profile.dart';
 import '../../domain/usecases/confirm_guardian_consent.dart';
+import '../../domain/usecases/confirm_password_reset.dart';
 import '../../domain/usecases/check_in_by_qr.dart';
+import '../../domain/usecases/create_students.dart';
 import '../../domain/usecases/end_session.dart';
+import '../../domain/usecases/issue_link_code.dart';
+import '../../domain/usecases/parse_student_roster_input.dart';
+import '../../domain/usecases/request_password_reset.dart';
+import '../../domain/usecases/sign_in_with_link_code.dart';
+import '../../domain/usecases/sign_up_teacher.dart';
+import '../../domain/usecases/verify_teacher_email.dart';
 import '../../domain/usecases/ensure_teacher_beacon.dart';
 import '../../domain/usecases/get_active_session.dart';
 import '../../domain/usecases/issue_kiosk_device.dart';
@@ -166,4 +175,41 @@ final confirmGuardianConsentProvider = Provider<ConfirmGuardianConsent>(
 
 final buildNeisExceptionExportProvider = Provider<BuildNeisExceptionExport>(
   (ref) => const BuildNeisExceptionExport(),
+);
+
+// ── M5 계정·온보딩 ──
+final signUpTeacherProvider = Provider<SignUpTeacher>(
+  (ref) => SignUpTeacher(ref.watch(authRepositoryProvider)),
+);
+
+final verifyTeacherEmailProvider = Provider<VerifyTeacherEmail>(
+  (ref) => VerifyTeacherEmail(ref.watch(authRepositoryProvider)),
+);
+
+final completeTeacherProfileProvider = Provider<CompleteTeacherProfile>(
+  (ref) => CompleteTeacherProfile(ref.watch(authRepositoryProvider)),
+);
+
+final requestPasswordResetProvider = Provider<RequestPasswordReset>(
+  (ref) => RequestPasswordReset(ref.watch(authRepositoryProvider)),
+);
+
+final confirmPasswordResetProvider = Provider<ConfirmPasswordReset>(
+  (ref) => ConfirmPasswordReset(ref.watch(authRepositoryProvider)),
+);
+
+final signInWithLinkCodeProvider = Provider<SignInWithLinkCode>(
+  (ref) => SignInWithLinkCode(ref.watch(authRepositoryProvider)),
+);
+
+final createStudentsProvider = Provider<CreateStudents>(
+  (ref) => CreateStudents(ref.watch(rosterRepositoryProvider)),
+);
+
+final issueLinkCodeProvider = Provider<IssueLinkCode>(
+  (ref) => IssueLinkCode(ref.watch(rosterRepositoryProvider)),
+);
+
+final parseStudentRosterInputProvider = Provider<ParseStudentRosterInput>(
+  (ref) => const ParseStudentRosterInput(),
 );

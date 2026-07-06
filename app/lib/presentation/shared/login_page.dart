@@ -101,6 +101,23 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       : const Text('로그인'),
                 ),
                 const SizedBox(height: AppSpacing.md),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    TextButton(
+                      onPressed: () => context.go('/signup'),
+                      child: const Text('교사 회원가입'),
+                    ),
+                    TextButton(
+                      onPressed: () => context.go('/forgot'),
+                      child: const Text('비밀번호 재설정'),
+                    ),
+                  ],
+                ),
+                TextButton(
+                  onPressed: () => context.go('/link'),
+                  child: const Text('학생인가요? 연결 코드로 시작'),
+                ),
                 TextButton(
                   onPressed: () => context.go('/kiosk'),
                   child: const Text('키오스크 모드 (교실 태블릿)'),
