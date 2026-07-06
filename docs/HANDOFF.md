@@ -46,7 +46,7 @@
 
 - **구현**: M0~M5. BLE 자동 출석 실기기 성공(2026-07-06). M5 = 교사 회원가입(이메일 OTP)·비밀번호 재설정(recovery OTP)·학생 일괄 생성(create_students)·연결 코드 발급/재발급(issue_link_code)·학생 기기 연결(redeem_link_code + StudentLinkPage)·동의 생성 통합(guardian_consented).
 - **M5 계약 요지**: 연결 코드 = 32자 알파벳(I/O/0/1 제외)×12자(60bit), DB엔 sha256 해시만, 48시간·1회용, redeem 시 내부 비밀번호 회전. 학생 내부 이메일 `stu-<uuid>@student.chulseokping.internal`.
-- **커밋 이력**: `f4baa51`(핸드오프+백로그) ← `d525edc`(LICENSE+README) ← `af0f52e`(조사 문서 6건)
+- **커밋 이력**: `d1a6c78`(핸드오프+백로그) ← `55bf90a`(LICENSE+README) ← `806c511`(조사 문서 6건)
 - **오픈소스 준비 완료**: Apache-2.0, README 배포자 법적 고지, 시크릿 스캔 통과. 남은 것: main 병합·푸시·저장소 Public 전환(사용자 명시 요청 시).
 
 ## ⚠ 함정 목록 (실기기에서 피 흘려 배운 것)
