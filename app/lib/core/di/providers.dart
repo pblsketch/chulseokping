@@ -24,10 +24,12 @@ import '../../domain/repositories/session_repository.dart';
 import '../../domain/services/beacon_advertiser.dart';
 import '../../domain/services/beacon_scanner.dart';
 import '../../domain/services/teacher_beacon_store.dart';
+import '../../domain/usecases/archive_class.dart';
 import '../../domain/usecases/build_neis_exception_export.dart';
 import '../../domain/usecases/check_in_by_ble.dart';
 import '../../domain/usecases/check_in_by_pin.dart';
 import '../../domain/usecases/complete_teacher_profile.dart';
+import '../../domain/usecases/create_class.dart';
 import '../../domain/usecases/confirm_guardian_consent.dart';
 import '../../domain/usecases/confirm_password_reset.dart';
 import '../../domain/usecases/check_in_by_qr.dart';
@@ -35,6 +37,8 @@ import '../../domain/usecases/create_students.dart';
 import '../../domain/usecases/end_session.dart';
 import '../../domain/usecases/issue_link_code.dart';
 import '../../domain/usecases/parse_student_roster_input.dart';
+import '../../domain/usecases/remove_student_from_class.dart';
+import '../../domain/usecases/rename_class.dart';
 import '../../domain/usecases/request_password_reset.dart';
 import '../../domain/usecases/sign_in_with_link_code.dart';
 import '../../domain/usecases/sign_up_teacher.dart';
@@ -212,4 +216,21 @@ final issueLinkCodeProvider = Provider<IssueLinkCode>(
 
 final parseStudentRosterInputProvider = Provider<ParseStudentRosterInput>(
   (ref) => const ParseStudentRosterInput(),
+);
+
+// ── M6 학급 관리 ──
+final createClassProvider = Provider<CreateClass>(
+  (ref) => CreateClass(ref.watch(rosterRepositoryProvider)),
+);
+
+final renameClassProvider = Provider<RenameClass>(
+  (ref) => RenameClass(ref.watch(rosterRepositoryProvider)),
+);
+
+final archiveClassProvider = Provider<ArchiveClass>(
+  (ref) => ArchiveClass(ref.watch(rosterRepositoryProvider)),
+);
+
+final removeStudentFromClassProvider = Provider<RemoveStudentFromClass>(
+  (ref) => RemoveStudentFromClass(ref.watch(rosterRepositoryProvider)),
 );

@@ -8,6 +8,7 @@ import '../../domain/entities/student.dart';
 import '../../domain/repositories/roster_repository.dart';
 import '../../domain/value_objects/user_role.dart';
 import '../datasources/supabase_remote_data_source.dart';
+import '../models/class_room_dto.dart';
 import 'failure_mapper.dart';
 
 class RosterRepositoryImpl implements RosterRepository {
@@ -94,6 +95,58 @@ class RosterRepositoryImpl implements RosterRepository {
           expiresAt: DateTime.parse(response['expires_at'] as String),
         ),
       );
+    } catch (e) {
+      return Err(mapToFailure(e));
+    }
+  }
+
+  @override
+  Future<Result<ClassRoom>> createClass(String name) async {
+    try {
+      final response = await _remote.invokeCheckIn('create_class', {
+        'name': name,
+      });
+      final row = (response['class'] as Map).cast<String, dynamic>();
+      return Ok(ClassRoomDto.fromJson(row).toEntity());
+    } catch (e) {
+      return Err(mapToFailure(e));
+    }
+  }
+
+  @override
+  Future<Result<void>> renameClass({
+    required String classId,
+    required String name,
+  }) async {
+    try {
+      await _remote.updateClassName(classId: classId, name: name);
+      return const Ok(null);
+    } catch (e) {
+      return Err(mapToFailure(e));
+    }
+  }
+
+  @override
+  Future<Result<void>> archiveClass(String classId) async {
+    try {
+      await _remote.archiveClass(classId);
+      return const Ok(null);
+    } catch (e) {
+      return Err(mapToFailure(e));
+    }
+  }
+
+  @override
+  Future<Result<void>> removeStudentFromClass({
+    required String classId,
+    required String studentId,
+  }) async {
+    try {
+      await _remote.removeStudentFromClass(
+        classId: classId,
+        studentId: studentId,
+      );
+      return const Ok(null);
     } catch (e) {
       return Err(mapToFailure(e));
     }

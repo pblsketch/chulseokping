@@ -12,9 +12,130 @@ import '../../domain/value_objects/session_type.dart';
 import '../shared/auth_controller.dart';
 import '../shared/roster_providers.dart';
 
-/// 교사 홈 — 학급 목록 + 세션 시작 (TE-1).
+/// 교사 홈 — 학급 목록 + 세션 시작 (TE-1) + 학급 관리 (M6).
 class TeacherShell extends ConsumerWidget {
   const TeacherShell({super.key});
+
+  /// M6: 학급 생성은 create_class Edge Function 경유 — QR secret이 함께 발급된다.
+  Future<void> _createClass(BuildContext context, WidgetRef ref) async {
+    final name = await _promptClassName(context, title: '학급 만들기');
+    if (name == null || !context.mounted) return;
+
+    final result = await ref.read(createClassProvider).call(name);
+    if (!context.mounted) return;
+    switch (result) {
+      case Ok(:final value):
+        ref.invalidate(myClassesProvider);
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('"${value.name}" 학급이 만들어졌어요')));
+      case Err(:final failure):
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(failure.message)));
+    }
+  }
+
+  Future<void> _renameClass(
+    BuildContext context,
+    WidgetRef ref,
+    ClassRoom classRoom,
+  ) async {
+    final name = await _promptClassName(
+      context,
+      title: '학급 이름 변경',
+      initial: classRoom.name,
+    );
+    if (name == null || !context.mounted) return;
+
+    final result = await ref
+        .read(renameClassProvider)
+        .call(classId: classRoom.id, name: name);
+    if (!context.mounted) return;
+    switch (result) {
+      case Ok():
+        ref.invalidate(myClassesProvider);
+      case Err(:final failure):
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(failure.message)));
+    }
+  }
+
+  Future<void> _archiveClass(
+    BuildContext context,
+    WidgetRef ref,
+    ClassRoom classRoom,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('학급 보관'),
+        content: Text(
+          '"${classRoom.name}" 학급을 보관할까요?\n\n'
+          '학년도 종료·폐급용이에요. 세션과 출결 이력은 그대로 보존되고, '
+          '학급 목록에서만 사라져요.',
+          style: AppTypography.body,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('취소'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('보관'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !context.mounted) return;
+
+    final result = await ref.read(archiveClassProvider).call(classRoom.id);
+    if (!context.mounted) return;
+    switch (result) {
+      case Ok():
+        ref.invalidate(myClassesProvider);
+      case Err(:final failure):
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(failure.message)));
+    }
+  }
+
+  Future<String?> _promptClassName(
+    BuildContext context, {
+    required String title,
+    String? initial,
+  }) {
+    final controller = TextEditingController(text: initial);
+    return showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(title),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          maxLength: 30,
+          decoration: const InputDecoration(
+            labelText: '학급 이름',
+            hintText: '예: 1학년 3반',
+          ),
+          onSubmitted: (value) => Navigator.pop(context, value),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('취소'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, controller.text),
+            child: const Text('확인'),
+          ),
+        ],
+      ),
+    );
+  }
 
   Future<void> _startSession(
     BuildContext context,
@@ -100,6 +221,11 @@ class TeacherShell extends ConsumerWidget {
         title: const Text('출석핑 · 교사'),
         actions: [
           IconButton(
+            tooltip: '학급 만들기',
+            onPressed: () => _createClass(context, ref),
+            icon: const Icon(Icons.add),
+          ),
+          IconButton(
             tooltip: '로그아웃',
             onPressed: () =>
                 ref.read(authControllerProvider.notifier).signOut(),
@@ -148,6 +274,10 @@ class TeacherShell extends ConsumerWidget {
                                   );
                                 case 'kiosk':
                                   _issueKioskDevice(context, ref, classRoom);
+                                case 'rename':
+                                  _renameClass(context, ref, classRoom);
+                                case 'archive':
+                                  _archiveClass(context, ref, classRoom);
                               }
                             },
                             itemBuilder: (context) => const [
@@ -162,6 +292,14 @@ class TeacherShell extends ConsumerWidget {
                               PopupMenuItem(
                                 value: 'kiosk',
                                 child: Text('키오스크 기기 발급'),
+                              ),
+                              PopupMenuItem(
+                                value: 'rename',
+                                child: Text('학급 이름 변경'),
+                              ),
+                              PopupMenuItem(
+                                value: 'archive',
+                                child: Text('학급 보관 (학년도 종료)'),
                               ),
                             ],
                           ),

@@ -1,6 +1,6 @@
-# 출석핑 — Claude Code 핸드오프 (2026-07-06 갱신 2차: M5 완료)
+# 출석핑 — Claude Code 핸드오프 (2026-07-06 갱신 3차: M6 완료)
 
-> 이 저장소(`E:\github\chulseokping`)에서 **Claude Code를 열고** 아래 "붙여넣기 프롬프트"를 그대로 입력하면 이어서 개발할 수 있다. M0~M5(계정·온보딩) 구현까지 끝났고, 다음은 **M6(학급·명단 관리) → 백로그 P0 → M7(학교 관리)** 순서다.
+> 이 저장소(`E:\github\chulseokping`)에서 **Claude Code를 열고** 아래 "붙여넣기 프롬프트"를 그대로 입력하면 이어서 개발할 수 있다. M0~M6(학급·명단 관리) 구현까지 끝났고, 다음은 **백로그 P0(세션 시간창 → 기기 바인딩 → 헤드카운트) → M7(학교 관리)** 순서다.
 
 ---
 
@@ -16,17 +16,16 @@
 4. docs/ARCHITECTURE.md              (클린 아키텍처 경계)
 
 [현재 상태 — 요약]
-- M0(백엔드)~M5(계정·온보딩) 구현 완료. 실기기에서 BLE 자동 출석·회전 QR·실시간 반영 검증 통과(M4까지).
-- M5 학생 계정 모델 확정: **하이브리드** — 교사 일괄 생성(내부 이메일, service role)이 기본, invite_code는 "학생 기기 연결 코드"로 재정의(student_link_codes, 해시 저장·48h·1회용).
-- flutter analyze 0건, 앱 테스트 85개 + 백엔드 통합 32개 통과.
+- M0(백엔드)~M6(학급·명단 관리) 구현 완료. 실기기에서 BLE 자동 출석·회전 QR·실시간 반영 검증 통과(M4까지).
+- M5 학생 계정 모델: **하이브리드** — 교사 일괄 생성(내부 이메일, service role) + 학생 연결 코드(student_link_codes, 해시 저장·48h·1회용).
+- M6: 학급 생성 = create_class Edge Function 전용(classes 클라 INSERT는 RLS 차단 — QR secret 동시 발급 강제), 학급 보관(archived_at), 명단 제외(전학/졸업 — 출결·계정 보존).
+- flutter analyze 0건, 앱 테스트 90개 + 백엔드 통합 37개 통과.
 - 프로젝트 방향: 상용 서비스가 아니라 GitHub 오픈소스 공개 (법적 쟁점은 배포자 고지 프레임 — docs/LAUNCH_GATE_LEGAL_RESEARCH.md §8).
-- 미커밋: M5 구현 전체(마이그레이션 2·Edge Function 3·앱 페이지 3·테스트) — 커밋은 사용자 요청 시.
 
 [해야 할 일 — 이 순서로]
-1) M5 실기기 확인(선택): 교사 회원가입 → 학생 추가 → 연결 코드로 학생 폰 연결 → BLE 출석까지 한 사이클.
-2) M6: 학급 CRUD(⚠ class_secrets 동시 발급 필수 — HANDOFF 함정 목록 참조), 학생 제거/전학/졸업(soft delete), 연도 진급.
-   (학생 일괄 등록은 M5에서 create_students + 명단 붙여넣기 UI로 선구현됨 — M6는 학급 생성 흐름에 통합만.)
-3) 이후 백로그 P0(세션 시간창 → 기기 바인딩 → 헤드카운트) → M7(학교 단위 관리).
+1) 실기기 확인(선택): 교사 회원가입 → 학급 만들기 → 학생 추가 → 연결 코드로 학생 폰 연결 → BLE 출석까지 한 사이클.
+2) 백로그 P0: 세션 시간창(auto-close+지각 자동 구분) → 기기 바인딩 → 세션 마감 헤드카운트. 상세는 IMPROVEMENT_BACKLOG P0 + RESEARCH_* 문서.
+3) M7(학교 단위 관리): school_admin 역할·학교 생성·교사 소속 승인·데이터 수명주기(연도 진급 정책 포함).
 
 [절대 규칙 — 어기면 안 됨]
 - 출석 쓰기 = Edge Function 경유만. 클라이언트 직접 INSERT 금지.
@@ -61,6 +60,8 @@
 | CLI secure-by-default | `npx supabase`(버전 미고정)가 CLI 2.109+로 올라가면 public 스키마에서 API 롤(anon/authenticated/**service_role 포함**)의 SELECT/INSERT/UPDATE/DELETE 기본 GRANT가 사라짐 → service role조차 permission denied, 통합 테스트 전멸. 해결: `20260706000003_api_role_grants.sql`(명시 GRANT + default privileges). 새 스키마 마이그레이션은 이 파일 이후 순서면 자동 적용됨 |
 | Docker E: 마운트 | Docker Desktop이 절전/강제종료 후 E: 드라이브 WSL 마운트가 깨지면 supabase start가 "mkdir /run/desktop/mnt/host/e: file exists"로 실패 — Docker Desktop 종료 → `wsl --shutdown` → Docker Desktop 재시작으로 해결 |
 | 이메일 OTP 로컬 | 교사 가입/재설정 OTP는 config.toml `enable_confirmations=true` + `supabase/templates/*.html`({{ .Token }} 노출) 전제. 메일은 Mailpit(http://127.0.0.1:54324)에서 확인. config 변경은 supabase stop→start 필요 |
+| 새 Edge Function 등록 | 함수 디렉터리를 새로 만들면 게이트웨이 라우트가 start 시점에만 등록됨 — db reset만으로는 "Function not found". **supabase stop→start 필수** |
+| 학급 생성 경로 | classes 클라 직접 INSERT는 RLS가 거부(M6) — 학급 생성은 create_class Edge Function만. 시드는 postgres role이라 예외 |
 
 ## 환경 부팅 (재부팅 후)
 

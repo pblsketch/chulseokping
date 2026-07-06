@@ -53,6 +53,22 @@ export function randomPassword(): string {
   return Array.from(bytes).map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
+/** 학급 표시용 초대코드 8자 (M5에서 로그인 용도는 연결 코드로 대체 — 표시·식별용) */
+export function generateInviteCode(): string {
+  const bytes = new Uint8Array(8);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes)
+    .map((b) => CODE_ALPHABET[b % CODE_ALPHABET.length])
+    .join("");
+}
+
+/** 학급 QR TOTP secret — 20바이트 hex (앱 SecureRandom.beaconSecret과 동일 계약) */
+export function randomHexSecret(byteLength = 20): string {
+  const bytes = new Uint8Array(byteLength);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes).map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
 export function linkCodeExpiry(now = new Date()): string {
   return new Date(now.getTime() + LINK_CODE_TTL_HOURS * 3600_000).toISOString();
 }

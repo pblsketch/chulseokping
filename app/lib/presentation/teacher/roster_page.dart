@@ -202,6 +202,51 @@ class RosterPage extends ConsumerWidget {
     }
   }
 
+  /// M6: 전학/졸업 — 명단만 해제(출결 이력·계정 보존).
+  Future<void> _removeFromClass(
+    BuildContext context,
+    WidgetRef ref,
+    Student student,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('명단에서 제외'),
+        content: Text(
+          '${student.name} 학생을 이 학급 명단에서 제외할까요? (전학·졸업)\n\n'
+          '지금까지의 출결 이력은 나이스 근거라 그대로 보존돼요. '
+          '명단에서 빠지면 이 학급에서는 더 이상 출석할 수 없어요.',
+          style: AppTypography.body,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('취소'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: AppColors.danger),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('제외'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !context.mounted) return;
+
+    final result = await ref
+        .read(removeStudentFromClassProvider)
+        .call(classId: classId, studentId: student.id);
+    if (!context.mounted) return;
+    switch (result) {
+      case Ok():
+        ref.invalidate(sessionStudentsProvider(classId));
+      case Err(:final failure):
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(failure.message)));
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final students = ref.watch(sessionStudentsProvider(classId));
@@ -281,6 +326,12 @@ class RosterPage extends ConsumerWidget {
                           onPressed: () =>
                               _issueLinkCode(context, ref, student),
                           icon: const Icon(Icons.phonelink_ring_outlined),
+                        ),
+                        IconButton(
+                          tooltip: '명단에서 제외 (전학·졸업)',
+                          onPressed: () =>
+                              _removeFromClass(context, ref, student),
+                          icon: const Icon(Icons.person_remove_outlined),
                         ),
                       ],
                     ),

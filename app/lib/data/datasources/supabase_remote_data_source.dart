@@ -91,7 +91,8 @@ class SupabaseRemoteDataSource {
     final rows = await _client
         .from('classes')
         .select('id, school_id, teacher_id, name, invite_code')
-        .eq('teacher_id', teacherId);
+        .eq('teacher_id', teacherId)
+        .isFilter('archived_at', null); // 보관 학급 숨김 (M6)
     return rows.map(ClassRoomDto.fromJson).toList();
   }
 
@@ -102,9 +103,29 @@ class SupabaseRemoteDataSource {
           'id, school_id, teacher_id, name, invite_code, '
           'student_classes!inner(student_id)',
         )
-        .eq('student_classes.student_id', studentId);
+        .eq('student_classes.student_id', studentId)
+        .isFilter('archived_at', null);
     return rows.map(ClassRoomDto.fromJson).toList();
   }
+
+  // ── Class 관리 (M6) — 생성은 create_class Edge Function 전용 ──
+  Future<void> updateClassName({
+    required String classId,
+    required String name,
+  }) => _client.from('classes').update({'name': name}).eq('id', classId);
+
+  Future<void> archiveClass(String classId) => _client
+      .from('classes')
+      .update({'archived_at': DateTime.now().toUtc().toIso8601String()})
+      .eq('id', classId);
+
+  Future<void> removeStudentFromClass({
+    required String classId,
+    required String studentId,
+  }) => _client.from('student_classes').delete().match({
+    'class_id': classId,
+    'student_id': studentId,
+  });
 
   Future<List<ProfileDto>> studentsOf(String classId) async {
     final rows = await _client

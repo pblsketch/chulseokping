@@ -25,4 +25,24 @@ abstract interface class RosterRepository {
 
   /// M5: 학생 연결 코드 재발급(기존 코드 무효화) — 학생용 "비밀번호 재설정".
   Future<Result<IssuedLinkCode>> issueLinkCode(String studentId);
+
+  // ── M6 학급 관리 ──
+
+  /// 학급 생성 — create_class Edge Function 경유(class_secrets 동시 발급).
+  /// 클라 직접 INSERT는 RLS가 차단한다(secret 없는 학급 방지).
+  Future<Result<ClassRoom>> createClass(String name);
+
+  Future<Result<void>> renameClass({
+    required String classId,
+    required String name,
+  });
+
+  /// 학급 보관 — 삭제 대신 목록에서 숨김(세션·출결 이력은 나이스 근거라 보존).
+  Future<Result<void>> archiveClass(String classId);
+
+  /// 전학/졸업 — 명단(student_classes)만 해제, 계정·출결 이력 보존.
+  Future<Result<void>> removeStudentFromClass({
+    required String classId,
+    required String studentId,
+  });
 }
