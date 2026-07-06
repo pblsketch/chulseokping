@@ -429,3 +429,9 @@ verify_jwt = false  # 연결 코드 자체가 자격 증명 — 로그인 전 �
 
 [functions.create_class]
 verify_jwt = false  # in-function getUser() authenticates (local gateway ES256 limitation)
+
+[functions.register_device]
+verify_jwt = false  # in-function getUser() authenticates (local gateway ES256 limitation)
+
+[functions.approve_device]
+verify_jwt = false  # in-function getUser() authenticates (local gateway ES256 limitation)

@@ -1,6 +1,7 @@
 import '../../core/result/result.dart';
 import '../../domain/entities/attendance_record.dart';
 import '../../domain/repositories/attendance_repository.dart';
+import '../../domain/services/device_identity_store.dart';
 import '../../domain/value_objects/absence_reason.dart';
 import '../../domain/value_objects/attendance_status.dart';
 import '../datasources/supabase_remote_data_source.dart';
@@ -9,9 +10,17 @@ import 'failure_mapper.dart';
 
 /// 계약(BE-0): 모든 쓰기는 검증 Edge Function invoke — 직접 INSERT/UPDATE 없음.
 class AttendanceRepositoryImpl implements AttendanceRepository {
-  const AttendanceRepositoryImpl(this._remote);
+  const AttendanceRepositoryImpl(this._remote, {this._deviceStore});
 
   final SupabaseRemoteDataSource _remote;
+
+  /// P0-2: QR/BLE 체크인에 기기 uuid 동봉 (서버 로그-온리 판정용). null이면 미동봉.
+  final DeviceIdentityStore? _deviceStore;
+
+  Future<String?> _deviceUuid() async {
+    final identity = await _deviceStore?.load();
+    return identity?.uuid;
+  }
 
   Future<Result<AttendanceRecord>> _invoke(
     String functionName,
@@ -30,8 +39,12 @@ class AttendanceRepositoryImpl implements AttendanceRepository {
   Future<Result<AttendanceRecord>> checkInByQr({
     required String sessionId,
     required String code,
-  }) {
-    return _invoke('check_in_qr', {'session_id': sessionId, 'code': code});
+  }) async {
+    return _invoke('check_in_qr', {
+      'session_id': sessionId,
+      'code': code,
+      'device_uuid': ?await _deviceUuid(),
+    });
   }
 
   @override
@@ -39,11 +52,12 @@ class AttendanceRepositoryImpl implements AttendanceRepository {
     required String sessionId,
     required int major,
     required int minor,
-  }) {
+  }) async {
     return _invoke('check_in_ble', {
       'session_id': sessionId,
       'major': major,
       'minor': minor,
+      'device_uuid': ?await _deviceUuid(),
     });
   }
 

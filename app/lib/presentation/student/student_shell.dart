@@ -7,6 +7,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_typography.dart';
 import '../../domain/entities/attendance_record.dart';
+import '../../domain/entities/device_identity.dart';
 import '../shared/auth_controller.dart';
 import '../shared/roster_providers.dart';
 import 'ble_check_in_controller.dart';
@@ -17,6 +18,15 @@ final myAttendanceProvider = StreamProvider.autoDispose
       (ref, sessionId) => ref.watch(watchMyAttendanceProvider).call(sessionId),
     );
 
+/// P0-2: 로그인 후 기기 등록/확인 — 실패는 조용히 null (출석 흐름을 막지 않는다).
+/// autoDispose: 로그아웃으로 셸이 내려가면 다음 로그인 때 새로 등록한다.
+final deviceRegistrationProvider = FutureProvider.autoDispose<DeviceIdentity?>((
+  ref,
+) async {
+  final result = await ref.watch(ensureDeviceRegisteredProvider).call();
+  return result.fold((identity) => identity, (_) => null);
+});
+
 /// 학생 홈 — 활성 세션 감지 + QR 출석 (ST-4). BLE 자동 출석은 M3.
 class StudentShell extends ConsumerWidget {
   const StudentShell({super.key});
@@ -24,6 +34,8 @@ class StudentShell extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final classes = ref.watch(myClassesProvider);
+    // 기기 등록은 셸 진입 시 1회 — pending이면 안내 배너만 (출석은 계속 가능)
+    final device = ref.watch(deviceRegistrationProvider).value;
 
     return Scaffold(
       appBar: AppBar(
@@ -58,6 +70,10 @@ class StudentShell extends ConsumerWidget {
               padding: const EdgeInsets.all(AppSpacing.xl),
               children: [
                 Text(classRoom.name, style: AppTypography.h1),
+                if (device?.isPending ?? false) ...[
+                  const SizedBox(height: AppSpacing.md),
+                  const _PendingDeviceBanner(),
+                ],
                 const SizedBox(height: AppSpacing.xl),
                 session.when(
                   loading: () => const _LoadingCard(),
@@ -75,6 +91,34 @@ class StudentShell extends ConsumerWidget {
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+/// P0-2: 새 기기 승인 대기 안내 — 차단이 아니라 안내다 (색만으로 전달 금지, 텍스트 병기).
+class _PendingDeviceBanner extends StatelessWidget {
+  const _PendingDeviceBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: AppColors.warning.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.phonelink_lock, size: 18, color: AppColors.warning),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Text(
+              '새 기기예요 — 선생님 승인을 기다리고 있어요',
+              style: AppTypography.caption.copyWith(color: AppColors.warning),
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -20,12 +20,13 @@
 - M5 학생 계정 모델: **하이브리드** — 교사 일괄 생성(내부 이메일, service role) + 학생 연결 코드(student_link_codes, 해시 저장·48h·1회용).
 - M6: 학급 생성 = create_class Edge Function 전용(classes 클라 INSERT는 RLS 차단 — QR secret 동시 발급 강제), 학급 보관(archived_at), 명단 제외(전학/졸업 — 출결·계정 보존).
 - P0-1 세션 시간창: close_at/auto_late 서버 판정(410/late) + pg_cron 스윕 + 시작 시트 칩·지각 토글(기본 off)·카운트다운·+5분 연장. late는 사유 미확정(null) 허용 — 교사 사후 확정.
-- flutter analyze 0건, 앱 테스트 96개 + 백엔드 통합 40개 통과.
+- P0-2 기기 바인딩: 서버 발급 device_uuid(flutter_secure_storage) + 학생당 active 1대 + 재바인딩 교사 원탭 승인 + 로그-온리 플래그 4종(차단 없음). 체크인(QR/BLE)에 device_uuid 동봉.
+- flutter analyze 0건, 앱 테스트 100개 + 백엔드 통합 47개 통과.
 - 프로젝트 방향: 상용 서비스가 아니라 GitHub 오픈소스 공개 (법적 쟁점은 배포자 고지 프레임 — docs/LAUNCH_GATE_LEGAL_RESEARCH.md §8).
 
 [해야 할 일 — 이 순서로]
 1) 실기기 확인(선택): 교사 회원가입 → 학급 만들기 → 학생 추가 → 연결 코드 연결 → 시간창 세션(카운트다운·지각·마감) → BLE 출석까지 한 사이클.
-2) 백로그 P0 잔여: 기기 바인딩(P0-2) → 세션 마감 헤드카운트(P0-3). 상세는 IMPROVEMENT_BACKLOG P0 + RESEARCH_DEVICE_BINDING.md.
+2) 백로그 P0 잔여: 세션 마감 헤드카운트(P0-3 — 마감 시 "자동 출석 N명, 실제 인원과 맞나요?" 원탭 + CHECKIN_HEADCOUNT_GAP 플래그 + suspicious_flags 교사 배지 노출).
 3) M7(학교 단위 관리): school_admin 역할·학교 생성·교사 소속 승인·데이터 수명주기(연도 진급 정책 포함).
 
 [절대 규칙 — 어기면 안 됨]

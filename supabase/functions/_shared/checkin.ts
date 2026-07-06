@@ -197,6 +197,8 @@ export async function idempotentCheckIn(
     kioskDeviceId?: string;
     /** P0-1: 시간창 판정 결과. late는 사유 미확정으로 기록 — 확정은 교사 몫 */
     status?: "present" | "late";
+    /** P0-2: 본인 active 기기로 확인된 경우만 기록 (QR/BLE 경로) */
+    studentDeviceId?: string | null;
   },
 ): Promise<CheckInResult> {
   const { data: inserted, error } = await svc
@@ -208,6 +210,7 @@ export async function idempotentCheckIn(
       method: args.method,
       status: args.status ?? "present",
       kiosk_device_id: args.kioskDeviceId ?? null,
+      student_device_id: args.studentDeviceId ?? null,
     })
     .select()
     .single();

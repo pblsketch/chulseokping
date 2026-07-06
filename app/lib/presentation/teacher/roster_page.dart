@@ -11,7 +11,18 @@ import '../../core/utils/secure_random.dart';
 import '../../domain/entities/created_student.dart';
 import '../../domain/entities/new_student_entry.dart';
 import '../../domain/entities/student.dart';
+import '../../domain/entities/student_device.dart';
 import 'session_page.dart' show sessionStudentsProvider;
+
+/// P0-2: 학급 기기 목록 (pending 우선) — 승인/회수 후 invalidate로 갱신.
+final classDevicesProvider = FutureProvider.autoDispose
+    .family<List<StudentDevice>, String>((ref, classId) async {
+      final result = await ref.watch(getClassDevicesProvider).call(classId);
+      return result.fold(
+        (devices) => devices,
+        (failure) => throw failure.message,
+      );
+    });
 
 /// TE-6: 명단 관리 — 동의 확인(PI-2) + 키오스크 PIN 발급.
 /// M5: 학생 계정 일괄 생성 + 연결 코드 발급(하이브리드 모델).
@@ -259,6 +270,14 @@ class RosterPage extends ConsumerWidget {
             onPressed: () => _addStudents(context, ref),
             icon: const Icon(Icons.person_add_alt),
           ),
+          IconButton(
+            tooltip: '기기 승인·관리',
+            onPressed: () => showDialog<void>(
+              context: context,
+              builder: (context) => _DeviceApprovalDialog(classId: classId),
+            ),
+            icon: const Icon(Icons.smartphone),
+          ),
         ],
       ),
       body: students.when(
@@ -339,6 +358,121 @@ class RosterPage extends ConsumerWidget {
                 },
               ),
       ),
+    );
+  }
+}
+
+/// P0-2: 기기 승인·관리 — 재바인딩(pending)은 눈앞의 학생을 확인한 교사가 원탭 승인.
+class _DeviceApprovalDialog extends ConsumerWidget {
+  const _DeviceApprovalDialog({required this.classId});
+
+  final String classId;
+
+  Future<void> _moderate(
+    BuildContext context,
+    WidgetRef ref,
+    StudentDevice device, {
+    required bool approve,
+  }) async {
+    final usecase = approve
+        ? ref.read(approveStudentDeviceProvider).call
+        : ref.read(revokeStudentDeviceProvider).call;
+    final result = await usecase(device.id);
+    if (!context.mounted) return;
+    switch (result) {
+      case Ok():
+        ref.invalidate(classDevicesProvider(classId));
+      case Err(:final failure):
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(failure.message)));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final devices = ref.watch(classDevicesProvider(classId));
+    return AlertDialog(
+      title: const Text('기기 승인·관리'),
+      content: SizedBox(
+        width: 440,
+        child: devices.when(
+          loading: () => const SizedBox(
+            height: 120,
+            child: Center(child: CircularProgressIndicator()),
+          ),
+          error: (error, _) => Text('$error', style: AppTypography.body),
+          data: (list) => list.isEmpty
+              ? const Padding(
+                  padding: EdgeInsets.all(AppSpacing.lg),
+                  child: Text('등록된 기기가 없어요', style: AppTypography.body),
+                )
+              : SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      for (final device in list)
+                        ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          title: Text(
+                            device.studentName,
+                            style: AppTypography.bodyStrong,
+                          ),
+                          subtitle: Text(
+                            '${device.platform == 'android' ? 'Android' : 'iPhone'}'
+                            '${device.model == null ? '' : ' · ${device.model}'}'
+                            ' · ${device.isPending ? '승인 대기' : '사용 중'}',
+                            style: AppTypography.caption.copyWith(
+                              color: device.isPending
+                                  ? AppColors.warning
+                                  : AppColors.textSecondary,
+                            ),
+                          ),
+                          trailing: device.isPending
+                              ? Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    TextButton(
+                                      onPressed: () => _moderate(
+                                        context,
+                                        ref,
+                                        device,
+                                        approve: false,
+                                      ),
+                                      child: const Text('거절'),
+                                    ),
+                                    FilledButton(
+                                      onPressed: () => _moderate(
+                                        context,
+                                        ref,
+                                        device,
+                                        approve: true,
+                                      ),
+                                      child: const Text('승인'),
+                                    ),
+                                  ],
+                                )
+                              : TextButton(
+                                  onPressed: () => _moderate(
+                                    context,
+                                    ref,
+                                    device,
+                                    approve: false,
+                                  ),
+                                  child: const Text('회수'),
+                                ),
+                        ),
+                    ],
+                  ),
+                ),
+        ),
+      ),
+      actions: [
+        FilledButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('닫기'),
+        ),
+      ],
     );
   }
 }

@@ -335,6 +335,22 @@ class SupabaseRemoteDataSource {
     return row != null;
   }
 
+  // ── Devices (P0-2 — 등록·승인 쓰기는 Edge Function 전용) ──
+  /// 교사 승인 UI용: 담당 학급 학생들의 기기 목록 (RLS teaches_student로 제한, revoked 제외)
+  Future<List<Map<String, dynamic>>> devicesOfClass(String classId) async {
+    final rows = await _client
+        .from('student_devices')
+        .select(
+          'id, student_id, platform, device_model, status, registered_at, '
+          'profiles!student_devices_student_id_fkey!inner'
+          '(name, student_classes!inner(class_id))',
+        )
+        .eq('profiles.student_classes.class_id', classId)
+        .neq('status', 'revoked')
+        .order('registered_at', ascending: false);
+    return rows;
+  }
+
   // ── Attendance (쓰기 = Edge Function 전용) ──
   Future<Map<String, dynamic>> invokeCheckIn(
     String functionName,

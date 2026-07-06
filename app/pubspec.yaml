@@ -15,6 +15,9 @@ dependencies:
   flutter:
     sdk: flutter
   flutter_riverpod: ^3.3.2
+  # P0-2 기기 바인딩: 서버 발급 device_uuid를 Keychain(iOS)/Keystore(Android)에 보관
+  # (RESEARCH_DEVICE_BINDING §B-1 — SharedPreferences 평문 저장은 자격증명 수준 식별자에 부적합)
+  flutter_secure_storage: ^10.3.1
   freezed_annotation: ^3.1.0
   go_router: ^17.3.0
   json_annotation: ^4.12.0

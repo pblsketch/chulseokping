@@ -10,6 +10,7 @@ import {
   serviceClient,
   sessionTimeVerdict,
 } from "../_shared/checkin.ts";
+import { insertDeviceFlags, resolveCheckInDevice } from "../_shared/devices.ts";
 
 Deno.serve(async (req) => {
   const parsed = await parseCheckInBody(req);
@@ -44,12 +45,28 @@ Deno.serve(async (req) => {
   const guard = await consentAndMembershipGuard(svc, studentId, session.class_id);
   if (guard) return guard;
 
+  // P0-2: 기기 바인딩 판정 — 로그-온리, 어떤 경우에도 출석 기록은 진행
+  const device = await resolveCheckInDevice(
+    svc,
+    studentId,
+    body.device_uuid as string | undefined,
+  );
+
   const result = await idempotentCheckIn(svc, {
     studentId,
     classId: session.class_id,
     sessionId,
     method: "QR",
     status: verdict,
+    studentDeviceId: device.deviceId,
   });
+  if (result.created) {
+    await insertDeviceFlags(svc, {
+      studentId,
+      sessionId,
+      attendanceLogId: result.record.id as string,
+      flags: device.flags,
+    });
+  }
   return json(200, { created: result.created, record: result.record });
 });

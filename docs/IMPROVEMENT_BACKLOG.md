@@ -18,7 +18,10 @@
 - 교사 UX: 세션 시작 시트에 `5분 / 10분(기본) / 15분 / 수동 종료` 칩 + 진행 중 "+5분 연장"
 - 상세 설계: RESEARCH_TIME_WINDOW.md §5
 
-### 2. 기기 바인딩 (계정당 active 1기기)
+### 2. 기기 바인딩 (계정당 active 1기기) ✅ 구현 완료 (2026-07-06)
+
+> 구현: student_devices(서버 발급 uuid → flutter_secure_storage/Keychain·Keystore 보관, 학생당 active 1대) + register_device(최초 자동 active, 재바인딩 pending) + approve_device(교사 원탭 승인·회수) + QR/BLE 체크인 기기 판정. **차단 없음** — UNBOUND_DEVICE_CHECKIN / MULTI_ACCOUNT_SAME_DEVICE / RAPID_DEVICE_REBIND / SHARED_DEVICE 전부 로그-온리.
+> **잔여**: device_model·App Set ID 수집은 플러그인 미도입으로 미전송(서버는 수용 준비됨 — v2), 교사 대시보드 suspicious_flags 배지 노출은 P0-3 헤드카운트와 함께.
 "친구 폰 대신 들고 오기"는 업계 어느 시스템도 기술로 못 막는다(특허조차 헤드카운트 대조가 유일 대책). 기기 바인딩은 차단이 아니라 **공격 비용 인상 + 증거 확보** 수단.
 - 식별자(2025 Play 정책 합규): **서버 발급 UUID를 Keychain(iOS)/Keystore 기반 저장소(Android)에 보관**. SSAID·IMEI·MAC·광고ID·FCM 토큰은 바인딩 키 금지
 - 스키마: `student_devices` (학생당 `active` 1대 unique partial index, `pending`/`revoked` 상태) + `attendance_logs.student_device_id`
