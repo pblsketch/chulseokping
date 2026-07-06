@@ -28,4 +28,24 @@ void main() {
           'dchs_flutter_beacon이 API31+에서도 이 권한을 무조건 확인함',
     );
   });
+
+  test('AndroidManifest: BLUETOOTH_SCAN에 neverForLocation 플래그가 없다', () {
+    final manifest = File(
+      'android/app/src/main/AndroidManifest.xml',
+    ).readAsStringSync();
+    final line = manifest
+        .split('\n')
+        .firstWhere(
+          (l) =>
+              l.trim().startsWith('<uses-permission') &&
+              l.contains('BLUETOOTH_SCAN'),
+        );
+    expect(
+      line.contains('neverForLocation'),
+      isFalse,
+      reason:
+          'neverForLocation이 붙으면 Android OS가 스캔 결과에서 iBeacon 광고를 '
+          '걸러내 비컨 감지가 영원히 실패한다 (2026-07-06 실기 회귀)',
+    );
+  });
 }

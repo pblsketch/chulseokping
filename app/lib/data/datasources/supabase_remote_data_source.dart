@@ -208,6 +208,17 @@ class SupabaseRemoteDataSource {
     });
   }
 
+  /// 교사 전용(RLS) — 자기 기기 비컨 등록이 아직 유효한지 (BYOD 재사용 판단)
+  Future<bool> kioskDeviceActive(String deviceToken) async {
+    final row = await _client
+        .from('kiosk_devices')
+        .select('id')
+        .eq('device_token', deviceToken)
+        .eq('revoked', false)
+        .maybeSingle();
+    return row != null;
+  }
+
   // ── Attendance (쓰기 = Edge Function 전용) ──
   Future<Map<String, dynamic>> invokeCheckIn(
     String functionName,

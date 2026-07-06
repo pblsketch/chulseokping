@@ -2,12 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/di/providers.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_typography.dart';
+import '../../domain/entities/attendance_record.dart';
 import '../shared/auth_controller.dart';
 import '../shared/roster_providers.dart';
 import 'ble_check_in_controller.dart';
+
+/// 본인의 세션 출석 기록 (Realtime) — QR/BLE/키오스크 어느 경로든 즉시 반영.
+final myAttendanceProvider = StreamProvider.autoDispose
+    .family<AttendanceRecord?, String>(
+      (ref, sessionId) => ref.watch(watchMyAttendanceProvider).call(sessionId),
+    );
 
 /// 학생 홈 — 활성 세션 감지 + QR 출석 (ST-4). BLE 자동 출석은 M3.
 class StudentShell extends ConsumerWidget {
@@ -52,8 +60,7 @@ class StudentShell extends ConsumerWidget {
                 Text(classRoom.name, style: AppTypography.h1),
                 const SizedBox(height: AppSpacing.xl),
                 session.when(
-                  loading: () =>
-                      const Center(child: CircularProgressIndicator()),
+                  loading: () => const _LoadingCard(),
                   error: (error, _) => Text('$error'),
                   data: (active) => active == null
                       ? const _NoSessionCard()
@@ -68,6 +75,30 @@ class StudentShell extends ConsumerWidget {
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+class _LoadingCard extends StatelessWidget {
+  const _LoadingCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Card(
+      child: Padding(
+        padding: EdgeInsets.all(AppSpacing.xl),
+        child: Column(
+          children: [
+            SizedBox(
+              width: 28,
+              height: 28,
+              child: CircularProgressIndicator(strokeWidth: 3),
+            ),
+            SizedBox(height: AppSpacing.lg),
+            Text('세션 확인 중...', style: AppTypography.caption),
+          ],
+        ),
       ),
     );
   }
@@ -128,7 +159,9 @@ class _ActiveSessionCardState extends ConsumerState<_ActiveSessionCard> {
   @override
   Widget build(BuildContext context) {
     final bleState = ref.watch(bleCheckInControllerProvider(widget.sessionId));
-    final checkedIn = bleState is BleSuccess;
+    // 서버 기록이 진실 원천 — QR/키오스크로 출석해도 홈이 즉시 "출석됨"으로 바뀐다.
+    final myRecord = ref.watch(myAttendanceProvider(widget.sessionId));
+    final checkedIn = bleState is BleSuccess || myRecord.value != null;
 
     return Card(
       child: Padding(
@@ -143,8 +176,15 @@ class _ActiveSessionCardState extends ConsumerState<_ActiveSessionCard> {
             const SizedBox(height: AppSpacing.lg),
             Text('${widget.label} 세션 진행 중', style: AppTypography.title),
             const SizedBox(height: AppSpacing.lg),
-            _BleStatusArea(sessionId: widget.sessionId, state: bleState),
-            if (!checkedIn) ...[
+            if (checkedIn)
+              Text(
+                '출석되었어요!',
+                style: AppTypography.bodyStrong.copyWith(
+                  color: AppColors.success,
+                ),
+              )
+            else ...[
+              _BleStatusArea(sessionId: widget.sessionId, state: bleState),
               const SizedBox(height: AppSpacing.xl),
               ElevatedButton.icon(
                 onPressed: () =>
@@ -194,6 +234,22 @@ class _BleStatusArea extends ConsumerWidget {
       BleSuccess() => Text(
         '자동 출석되었어요!',
         style: AppTypography.bodyStrong.copyWith(color: AppColors.success),
+      ),
+      BleNotFound() => Column(
+        children: [
+          Text(
+            '교실 비컨을 찾지 못했어요 — QR로 출석해 주세요',
+            style: AppTypography.caption.copyWith(color: AppColors.warning),
+            textAlign: TextAlign.center,
+          ),
+          TextButton.icon(
+            onPressed: () => ref
+                .read(bleCheckInControllerProvider(sessionId).notifier)
+                .retry(),
+            icon: const Icon(Icons.refresh, size: 16),
+            label: const Text('다시 감지'),
+          ),
+        ],
       ),
       BleFailed(:final message) || BleUnavailable(:final message) => Text(
         message,

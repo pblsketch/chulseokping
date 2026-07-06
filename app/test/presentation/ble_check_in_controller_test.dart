@@ -166,6 +166,53 @@ void main() {
     );
   });
 
+  test('제한 시간 내 미감지 → BleNotFound (무한 스피너 방지), retry로 재스캔', () async {
+    final original = BleCheckInController.scanTimeout;
+    BleCheckInController.scanTimeout = const Duration(milliseconds: 30);
+    addTearDown(() => BleCheckInController.scanTimeout = original);
+
+    final c = container(isAndroid: true);
+    final notifier = c.read(bleCheckInControllerProvider('s1').notifier);
+    final sub = c.listen(bleCheckInControllerProvider('s1'), (_, _) {});
+    addTearDown(sub.close);
+
+    await notifier.start();
+    expect(c.read(bleCheckInControllerProvider('s1')), isA<BleScanning>());
+
+    await Future<void>.delayed(const Duration(milliseconds: 80));
+    expect(
+      c.read(bleCheckInControllerProvider('s1')),
+      isA<BleNotFound>(),
+      reason: '비컨 없음(교사 미광고 등)에서 무한 "감지 중"이면 안 된다',
+    );
+
+    await notifier.retry();
+    expect(c.read(bleCheckInControllerProvider('s1')), isA<BleScanning>());
+  });
+
+  test('감지 성공 시 타임아웃이 상태를 덮어쓰지 않는다', () async {
+    final original = BleCheckInController.scanTimeout;
+    BleCheckInController.scanTimeout = const Duration(milliseconds: 30);
+    addTearDown(() => BleCheckInController.scanTimeout = original);
+
+    final c = container(isAndroid: true);
+    final notifier = c.read(bleCheckInControllerProvider('s1').notifier);
+    final sub = c.listen(bleCheckInControllerProvider('s1'), (_, _) {});
+    addTearDown(sub.close);
+
+    await notifier.start();
+    await pump(c, [
+      [strong(1)],
+      [strong(2)],
+      [strong(3)],
+    ]);
+    await Future<void>.delayed(Duration.zero);
+    expect(c.read(bleCheckInControllerProvider('s1')), isA<BleSuccess>());
+
+    await Future<void>.delayed(const Duration(milliseconds: 80));
+    expect(c.read(bleCheckInControllerProvider('s1')), isA<BleSuccess>());
+  });
+
   test('서버 거부(동의 없음) → BleFailed 메시지', () async {
     when(
       () => repository.checkInByBle(

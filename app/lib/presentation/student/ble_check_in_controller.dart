@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/di/providers.dart';
@@ -25,6 +26,11 @@ class BleUnavailable extends BleCheckInState {
 
 class BleScanning extends BleCheckInState {
   const BleScanning();
+}
+
+/// 제한 시간 안에 비컨을 못 찾음 — 무한 "감지 중" 대신 QR 안내 + 재시도 (ST-4).
+class BleNotFound extends BleCheckInState {
+  const BleNotFound();
 }
 
 /// iPhone: 감지됨 — 원탭 확인 대기 (백그라운드 자동은 미보장, 정직 고지)
@@ -55,13 +61,22 @@ class BleFailed extends BleCheckInState {
 class BleCheckInController extends Notifier<BleCheckInState> {
   BleCheckInController(this._sessionId);
 
+  /// 이 시간 안에 안정 감지가 없으면 BleNotFound (무한 스피너 방지).
+  /// 테스트에서만 짧게 조정한다.
+  @visibleForTesting
+  static Duration scanTimeout = const Duration(seconds: 25);
+
   final String _sessionId;
   StreamSubscription<List<BeaconSighting>>? _subscription;
+  Timer? _timeoutTimer;
   BeaconSightingStabilizer _stabilizer = BeaconSightingStabilizer();
 
   @override
   BleCheckInState build() {
-    ref.onDispose(() => _subscription?.cancel());
+    ref.onDispose(() {
+      _subscription?.cancel();
+      _timeoutTimer?.cancel();
+    });
     return const BleIdle();
   }
 
@@ -74,6 +89,11 @@ class BleCheckInController extends Notifier<BleCheckInState> {
     }
     _stabilizer = BeaconSightingStabilizer();
     state = const BleScanning();
+    _timeoutTimer = Timer(scanTimeout, () async {
+      if (state is! BleScanning) return;
+      await _stopScan();
+      state = const BleNotFound();
+    });
     _subscription = scanner.ranging().listen(
       (sightings) {
         if (state is! BleScanning) return;
@@ -91,6 +111,20 @@ class BleCheckInController extends Notifier<BleCheckInState> {
     );
   }
 
+  /// BleNotFound에서 "다시 감지" (교사가 뒤늦게 비컨을 켠 경우 등).
+  Future<void> retry() async {
+    if (state is! BleNotFound) return;
+    state = const BleIdle();
+    await start();
+  }
+
+  Future<void> _stopScan() async {
+    _timeoutTimer?.cancel();
+    _timeoutTimer = null;
+    await _subscription?.cancel();
+    _subscription = null;
+  }
+
   /// iPhone 원탭 확인 (ST-3)
   Future<void> confirm() async {
     final current = state;
@@ -98,8 +132,7 @@ class BleCheckInController extends Notifier<BleCheckInState> {
   }
 
   Future<void> _submit(BeaconSighting sighting) async {
-    await _subscription?.cancel();
-    _subscription = null;
+    await _stopScan();
     state = const BleSubmitting();
     final result = await ref
         .read(checkInByBleProvider)

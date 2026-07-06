@@ -123,6 +123,7 @@ class KioskController extends AsyncNotifier<KioskState> {
       return;
     }
     if (!await advertiser.isSupported()) return;
+    if (!await advertiser.prepare()) return; // 광고 권한 거부 → QR/PIN만
     if (_advertising) return; // 회전은 아래 타이머가 담당
 
     _advertising = true;

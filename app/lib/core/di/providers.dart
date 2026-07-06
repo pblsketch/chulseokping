@@ -6,6 +6,7 @@ import 'dart:io';
 import '../../data/datasources/beacon_advertise_data_source.dart';
 import '../../data/datasources/beacon_scan_data_source.dart';
 import '../../data/datasources/supabase_remote_data_source.dart';
+import '../../data/datasources/teacher_beacon_prefs_store.dart';
 import '../../data/repositories/attendance_repository_impl.dart';
 import '../../data/repositories/auth_repository_impl.dart';
 import '../../data/repositories/consent_repository_impl.dart';
@@ -22,12 +23,14 @@ import '../../domain/repositories/roster_repository.dart';
 import '../../domain/repositories/session_repository.dart';
 import '../../domain/services/beacon_advertiser.dart';
 import '../../domain/services/beacon_scanner.dart';
+import '../../domain/services/teacher_beacon_store.dart';
 import '../../domain/usecases/build_neis_exception_export.dart';
 import '../../domain/usecases/check_in_by_ble.dart';
 import '../../domain/usecases/check_in_by_pin.dart';
 import '../../domain/usecases/confirm_guardian_consent.dart';
 import '../../domain/usecases/check_in_by_qr.dart';
 import '../../domain/usecases/end_session.dart';
+import '../../domain/usecases/ensure_teacher_beacon.dart';
 import '../../domain/usecases/get_active_session.dart';
 import '../../domain/usecases/issue_kiosk_device.dart';
 import '../../domain/usecases/set_student_pin.dart';
@@ -37,6 +40,7 @@ import '../../domain/usecases/sync_kiosk.dart';
 import '../../domain/usecases/update_attendance_status.dart';
 import '../../domain/usecases/watch_active_session.dart';
 import '../../domain/usecases/watch_live_attendance.dart';
+import '../../domain/usecases/watch_my_attendance.dart';
 
 /// DI 와이어링 (ARCHITECTURE §2 core/di).
 /// 테스트에서는 repository provider를 overrideWithValue로 대체한다.
@@ -77,6 +81,10 @@ final beaconScannerProvider = Provider<BeaconScanner>(
   (ref) => BeaconScanDataSource(),
 );
 
+final teacherBeaconStoreProvider = Provider<TeacherBeaconStore>(
+  (ref) => TeacherBeaconPrefsStore(),
+);
+
 final consentRepositoryProvider = Provider<ConsentRepository>(
   (ref) => ConsentRepositoryImpl(ref.watch(remoteDataSourceProvider)),
 );
@@ -113,6 +121,10 @@ final watchLiveAttendanceProvider = Provider<WatchLiveAttendance>(
   (ref) => WatchLiveAttendance(ref.watch(attendanceRepositoryProvider)),
 );
 
+final watchMyAttendanceProvider = Provider<WatchMyAttendance>(
+  (ref) => WatchMyAttendance(ref.watch(attendanceRepositoryProvider)),
+);
+
 final updateAttendanceStatusProvider = Provider<UpdateAttendanceStatus>(
   (ref) => UpdateAttendanceStatus(ref.watch(attendanceRepositoryProvider)),
 );
@@ -127,6 +139,13 @@ final checkInByBleProvider = Provider<CheckInByBle>(
 
 final issueKioskDeviceProvider = Provider<IssueKioskDevice>(
   (ref) => IssueKioskDevice(ref.watch(kioskRepositoryProvider)),
+);
+
+final ensureTeacherBeaconProvider = Provider<EnsureTeacherBeacon>(
+  (ref) => EnsureTeacherBeacon(
+    ref.watch(kioskRepositoryProvider),
+    ref.watch(teacherBeaconStoreProvider),
+  ),
 );
 
 final syncKioskProvider = Provider<SyncKiosk>(

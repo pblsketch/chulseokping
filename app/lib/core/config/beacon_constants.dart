@@ -6,4 +6,13 @@ abstract final class BeaconConstants {
 
   /// 광고 식별자 (Android beacon_broadcast identifier)
   static const String advertiserId = 'kr.chulseokping.kiosk';
+
+  /// Android 광고 레이아웃 — 반드시 iBeacon.
+  /// 수신측(dchs_flutter_beacon)은 iBeacon만 파싱하므로 beacon_broadcast 기본값
+  /// (AltBeacon)으로 광고하면 같은 방에서도 영원히 감지되지 않는다 (2026-07-06 실기 회귀).
+  static const String iBeaconLayout =
+      'm:2-3=0215,i:4-19,i:20-21,i:22-23,p:24-24';
+
+  /// iBeacon manufacturer ID (Apple, 0x004C) — 레이아웃과 세트로 필요.
+  static const int iBeaconManufacturerId = 0x004c;
 }

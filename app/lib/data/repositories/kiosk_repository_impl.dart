@@ -4,6 +4,7 @@ import '../../core/utils/secure_random.dart';
 import '../../domain/entities/attendance_record.dart';
 import '../../domain/entities/kiosk_device.dart';
 import '../../domain/entities/kiosk_sync.dart';
+import '../../domain/entities/teacher_beacon.dart';
 import '../../domain/repositories/kiosk_repository.dart';
 import '../datasources/supabase_remote_data_source.dart';
 import '../models/attendance_record_dto.dart';
@@ -32,6 +33,38 @@ class KioskRepositoryImpl implements KioskRepository {
       return Ok(
         IssuedKioskDevice(deviceToken: deviceToken, beaconMajor: beaconMajor),
       );
+    } catch (e) {
+      return Err(mapToFailure(e));
+    }
+  }
+
+  @override
+  Future<Result<TeacherBeaconIdentity>> issueClassBeacon(String classId) async {
+    try {
+      final teacherId = _remote.currentUserId;
+      if (teacherId == null) return const Err(AuthFailure());
+      final identity = TeacherBeaconIdentity(
+        deviceToken: SecureRandom.deviceToken(),
+        beaconMajor: SecureRandom.beaconMajor(),
+        beaconSecret: SecureRandom.beaconSecret(),
+      );
+      await _remote.createKioskDevice(
+        classId: classId,
+        teacherId: teacherId,
+        deviceToken: identity.deviceToken,
+        beaconMajor: identity.beaconMajor,
+        beaconSecret: identity.beaconSecret,
+      );
+      return Ok(identity);
+    } catch (e) {
+      return Err(mapToFailure(e));
+    }
+  }
+
+  @override
+  Future<Result<bool>> isBeaconDeviceActive(String deviceToken) async {
+    try {
+      return Ok(await _remote.kioskDeviceActive(deviceToken));
     } catch (e) {
       return Err(mapToFailure(e));
     }

@@ -91,6 +91,20 @@ class AttendanceRepositoryImpl implements AttendanceRepository {
   }
 
   @override
+  Stream<AttendanceRecord?> watchMyRecord(String sessionId) {
+    final studentId = _remote.currentUserId;
+    if (studentId == null) return Stream.value(null);
+    return _remote
+        .watchSessionLogs(sessionId)
+        .map(
+          (dtos) => dtos
+              .where((dto) => dto.studentId == studentId)
+              .map((dto) => dto.toEntity())
+              .firstOrNull,
+        );
+  }
+
+  @override
   Future<Result<List<AttendanceRecord>>> monthlyRecords({
     required String classId,
     required int year,

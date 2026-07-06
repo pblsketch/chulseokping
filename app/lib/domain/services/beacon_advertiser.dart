@@ -4,6 +4,9 @@ abstract interface class BeaconAdvertiser {
   /// 지원 안 되는 플랫폼/기기면 false — 키오스크는 QR/PIN만으로 동작한다.
   Future<bool> isSupported();
 
+  /// 광고 런타임 권한 확보 (Android 12+: BLUETOOTH_ADVERTISE). 거부 시 false.
+  Future<bool> prepare();
+
   Future<void> start({required int major, required int minor});
 
   Future<void> stop();

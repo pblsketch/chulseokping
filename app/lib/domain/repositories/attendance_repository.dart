@@ -41,6 +41,10 @@ abstract interface class AttendanceRepository {
   /// 세션 실시간 출결 스트림 (Realtime)
   Stream<List<AttendanceRecord>> watchSession(String sessionId);
 
+  /// 학생 본인의 세션 출석 기록 실시간 스트림 (미출석이면 null).
+  /// QR/BLE/키오스크 어느 경로로 출석해도 홈 화면이 즉시 "출석됨"으로 바뀐다 (ST-4).
+  Stream<AttendanceRecord?> watchMyRecord(String sessionId);
+
   /// 월별 조회 (나이스 일람표·내보내기 원천)
   Future<Result<List<AttendanceRecord>>> monthlyRecords({
     required String classId,

@@ -18,6 +18,7 @@ import '../../domain/value_objects/absence_reason.dart';
 import '../../domain/value_objects/attendance_status.dart';
 import '../shared/status_chip.dart';
 import 'session_roster.dart';
+import 'teacher_beacon_controller.dart';
 
 final sessionStudentsProvider = FutureProvider.family<List<Student>, String>((
   ref,
@@ -97,7 +98,13 @@ class SessionPage extends ConsumerWidget {
         children: [
           Padding(
             padding: const EdgeInsets.all(AppSpacing.lg),
-            child: RotatingQrCard(sessionId: sessionId, classId: classId),
+            child: Column(
+              children: [
+                RotatingQrCard(sessionId: sessionId, classId: classId),
+                const SizedBox(height: AppSpacing.sm),
+                TeacherBeaconBadge(classId: classId),
+              ],
+            ),
           ),
           const Divider(height: 1),
           Expanded(
@@ -253,6 +260,64 @@ class _RotatingQrCardState extends ConsumerState<RotatingQrCard> {
           ),
         );
       },
+    );
+  }
+}
+
+/// BYOD 비컨 송신 상태 — 세션 화면에 머무는 동안 이 기기가 비컨 역할을 한다.
+/// 색만으로 전달하지 않고 항상 텍스트 병기 (design.md).
+class TeacherBeaconBadge extends ConsumerStatefulWidget {
+  const TeacherBeaconBadge({super.key, required this.classId});
+
+  final String classId;
+
+  @override
+  ConsumerState<TeacherBeaconBadge> createState() => _TeacherBeaconBadgeState();
+}
+
+class _TeacherBeaconBadgeState extends ConsumerState<TeacherBeaconBadge> {
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(
+      () => ref
+          .read(teacherBeaconControllerProvider(widget.classId).notifier)
+          .start(),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final state = ref.watch(teacherBeaconControllerProvider(widget.classId));
+    final (icon, color, text) = switch (state) {
+      TeacherBeaconIdle() => (
+        Icons.wifi_tethering,
+        AppColors.textDisabled,
+        '비컨 준비 중...',
+      ),
+      TeacherBeaconOn() => (
+        Icons.wifi_tethering,
+        AppColors.success,
+        '비컨 송신 중 — 근처 학생은 자동 출석돼요',
+      ),
+      TeacherBeaconOff(:final message) => (
+        Icons.wifi_tethering_off,
+        AppColors.warning,
+        message,
+      ),
+    };
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(icon, size: 16, color: color),
+        const SizedBox(width: AppSpacing.xs),
+        Flexible(
+          child: Text(
+            text,
+            style: AppTypography.caption.copyWith(color: color),
+          ),
+        ),
+      ],
     );
   }
 }

@@ -10,8 +10,13 @@
          승인이 영원히 불가능해지고 비컨 스캔이 "항상 불가"로 고정되는 회귀가 있었다(2026-07-06).
          좌표(GPS lat/lng)는 이 권한이 있어도 코드에서 전혀 읽지 않는다 — PI-3 회귀 테스트가 보증. -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-    <!-- API 31+: 근접 감지 전용 스캔 선언(메타데이터 의미) — 위 이유로 런타임 게이트는 아직 FINE_LOCATION에 걸림 -->
-    <uses-permission android:name="android.permission.BLUETOOTH_SCAN" android:usesPermissionFlags="neverForLocation" />
+    <!-- BLUETOOTH_SCAN: neverForLocation 플래그 금지 — 이 플래그가 있으면 Android OS가
+         스캔 결과에서 iBeacon류(위치 추론 가능) 광고를 걸러내 앱에 전달하지 않는다.
+         태블릿이 정상 광고 중인데도 학생 폰이 영원히 감지 실패하는 회귀의 원인(2026-07-06 실기 로그:
+         PermissionsInspector "neverForLocation ... will block detection of bluetooth beacons").
+         플래그가 없으므로 스캔은 위치 권한(FINE_LOCATION) 승인과 함께 동작하며,
+         좌표는 여전히 어디서도 읽지 않는다(PI-3 회귀 테스트 보증). -->
+    <uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
     <!-- 키오스크 비컨 광고 (KO-3) -->
     <uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE" />
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />

@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:beacon_broadcast/beacon_broadcast.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 import '../../core/config/beacon_constants.dart';
 import '../../domain/services/beacon_advertiser.dart';
@@ -26,6 +27,18 @@ class BeaconAdvertiseDataSource implements BeaconAdvertiser {
   }
 
   @override
+  Future<bool> prepare() async {
+    // Android 12+(API 31)는 BLUETOOTH_ADVERTISE 런타임 승인이 없으면
+    // startAdvertising이 SecurityException으로 죽는다. 이하 버전은 자동 granted.
+    try {
+      final status = await Permission.bluetoothAdvertise.request();
+      return status.isGranted;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  @override
   Future<void> start({required int major, required int minor}) async {
     // minor 회전 = stop 후 재광고 (beacon_broadcast는 파라미터 변경 API가 없다)
     await stop();
@@ -34,7 +47,9 @@ class BeaconAdvertiseDataSource implements BeaconAdvertiser {
         .setMajorId(major)
         .setMinorId(minor)
         .setIdentifier(BeaconConstants.advertiserId)
-        .setLayout(BeaconBroadcast.ALTBEACON_LAYOUT);
+        // 수신측(dchs_flutter_beacon)은 iBeacon만 파싱한다 — AltBeacon 금지.
+        .setLayout(BeaconConstants.iBeaconLayout)
+        .setManufacturerId(BeaconConstants.iBeaconManufacturerId);
     await _broadcast.start();
     _advertising = true;
   }
