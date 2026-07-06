@@ -8,6 +8,7 @@ import {
   parseCheckInBody,
   pinHash,
   serviceClient,
+  sessionTimeVerdict,
 } from "../_shared/checkin.ts";
 
 Deno.serve(async (req) => {
@@ -37,6 +38,10 @@ Deno.serve(async (req) => {
   if (!session) return json(410, { error: "session_not_active" });
   if (session.class_id !== device.class_id) return json(403, { error: "class_mismatch" });
 
+  // P0-1: 수집 창 판정 — 서버 now() 기준
+  const verdict = sessionTimeVerdict(session);
+  if (verdict === "closed") return json(410, { error: "session_closed" });
+
   // 명단 매칭: 해당 class 소속 + 학번 일치 학생
   const { data: candidates } = await svc
     .from("profiles")
@@ -60,6 +65,7 @@ Deno.serve(async (req) => {
     sessionId,
     method: "PIN",
     kioskDeviceId: device.id,
+    status: verdict,
   });
 
   await svc

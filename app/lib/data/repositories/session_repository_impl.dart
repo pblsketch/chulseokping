@@ -17,6 +17,8 @@ class SessionRepositoryImpl implements SessionRepository {
     required SessionType type,
     int? period,
     required SessionMode mode,
+    int? closeMinutes,
+    int? autoLateMinutes,
   }) async {
     try {
       final teacherId = _remote.currentUserId;
@@ -27,7 +29,22 @@ class SessionRepositoryImpl implements SessionRepository {
         type: type.wireName,
         period: period,
         mode: mode.wireName,
+        closeMinutes: closeMinutes,
+        autoLateMinutes: autoLateMinutes,
       );
+      return Ok(dto.toEntity());
+    } catch (e) {
+      return Err(mapToFailure(e));
+    }
+  }
+
+  @override
+  Future<Result<Session>> extendSession(
+    String sessionId, {
+    required int byMinutes,
+  }) async {
+    try {
+      final dto = await _remote.extendSession(sessionId, byMinutes: byMinutes);
       return Ok(dto.toEntity());
     } catch (e) {
       return Err(mapToFailure(e));

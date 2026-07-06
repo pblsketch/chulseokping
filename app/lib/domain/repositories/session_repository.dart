@@ -3,14 +3,24 @@ import '../entities/session.dart';
 import '../value_objects/session_type.dart';
 
 abstract interface class SessionRepository {
+  /// P0-1: closeMinutes/autoLateMinutes는 서버 started_at 기준으로 창을 만든다
+  /// (클라 시계 불신 — close_at = 서버 started_at + closeMinutes).
   Future<Result<Session>> startSession({
     required String classId,
     required SessionType type,
     int? period,
     required SessionMode mode,
+    int? closeMinutes,
+    int? autoLateMinutes,
   });
 
   Future<Result<Session>> endSession(String sessionId);
+
+  /// P0-1: 수집 창 연장 — close_at을 현재 값에서 byMinutes만큼 뒤로.
+  Future<Result<Session>> extendSession(
+    String sessionId, {
+    required int byMinutes,
+  });
 
   /// 학생앱: 소속 학급의 활성 세션 감지
   Future<Result<Session?>> activeSessionFor(String classId);

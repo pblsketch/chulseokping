@@ -142,16 +142,22 @@ class TeacherShell extends ConsumerWidget {
     WidgetRef ref,
     ClassRoom classRoom,
   ) async {
-    final choice =
-        await showModalBottomSheet<({SessionType type, int? period})>(
-          context: context,
-          builder: (context) => const _SessionTypeSheet(),
-        );
+    final choice = await showModalBottomSheet<_SessionStartChoice>(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => const _SessionTypeSheet(),
+    );
     if (choice == null || !context.mounted) return;
 
     final result = await ref
         .read(startSessionProvider)
-        .call(classId: classRoom.id, type: choice.type, period: choice.period);
+        .call(
+          classId: classRoom.id,
+          type: choice.type,
+          period: choice.period,
+          windowMinutes: choice.windowMinutes,
+          lateEnabled: choice.lateEnabled,
+        );
     if (!context.mounted) return;
     switch (result) {
       case Ok(:final value):
@@ -321,8 +327,33 @@ class TeacherShell extends ConsumerWidget {
   }
 }
 
-class _SessionTypeSheet extends StatelessWidget {
+typedef _SessionStartChoice = ({
+  SessionType type,
+  int? period,
+  int? windowMinutes,
+  bool lateEnabled,
+});
+
+class _SessionTypeSheet extends StatefulWidget {
   const _SessionTypeSheet();
+
+  @override
+  State<_SessionTypeSheet> createState() => _SessionTypeSheetState();
+}
+
+class _SessionTypeSheetState extends State<_SessionTypeSheet> {
+  /// P0-1 수집 시간 기본 10분 (대학 데팍토 표준). null = 수동 종료(현행 동작).
+  int? _windowMinutes = 10;
+  bool _lateEnabled = false;
+
+  void _pop(BuildContext context, SessionType type, int? period) {
+    Navigator.pop(context, (
+      type: type,
+      period: period,
+      windowMinutes: _windowMinutes,
+      lateEnabled: _lateEnabled,
+    ));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -333,13 +364,47 @@ class _SessionTypeSheet extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            const Text('출석 수집 시간', style: AppTypography.bodyStrong),
+            const SizedBox(height: AppSpacing.sm),
+            Wrap(
+              spacing: AppSpacing.sm,
+              children: [
+                for (final (minutes, label) in [
+                  (5, '5분'),
+                  (10, '10분'),
+                  (15, '15분'),
+                  (null, '수동 종료'),
+                ])
+                  ChoiceChip(
+                    label: Text(label),
+                    selected: _windowMinutes == minutes,
+                    onSelected: (_) => setState(() {
+                      _windowMinutes = minutes;
+                      if (minutes == null) _lateEnabled = false;
+                    }),
+                  ),
+              ],
+            ),
+            SwitchListTile(
+              value: _lateEnabled,
+              // 지각 판정 기준(N분)은 학교장 재량 사항 — 기본 off
+              onChanged: _windowMinutes == null
+                  ? null
+                  : (v) => setState(() => _lateEnabled = v),
+              contentPadding: EdgeInsets.zero,
+              title: const Text('시간 이후는 지각으로 기록', style: AppTypography.body),
+              subtitle: Text(
+                _windowMinutes == null
+                    ? '수동 종료에서는 쓸 수 없어요'
+                    : '이후 20분 동안 지각으로 더 받아요 (사유는 나중에 확정)',
+                style: AppTypography.caption,
+              ),
+            ),
+            const Divider(height: AppSpacing.lg),
             const Text('세션 유형', style: AppTypography.h2),
             const SizedBox(height: AppSpacing.lg),
             ElevatedButton(
-              onPressed: () => Navigator.pop(context, (
-                type: SessionType.homeroom,
-                period: null,
-              )),
+              onPressed: () => _pop(context, SessionType.homeroom, null),
               child: const Text('조회 (담임)'),
             ),
             const SizedBox(height: AppSpacing.lg),
@@ -353,10 +418,7 @@ class _SessionTypeSheet extends StatelessWidget {
                   ActionChip(
                     backgroundColor: AppColors.bgSubtle,
                     label: Text('$period교시'),
-                    onPressed: () => Navigator.pop(context, (
-                      type: SessionType.period,
-                      period: period,
-                    )),
+                    onPressed: () => _pop(context, SessionType.period, period),
                   ),
               ],
             ),

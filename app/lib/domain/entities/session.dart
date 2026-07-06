@@ -13,6 +13,8 @@ class Session {
     required this.startedAt,
     this.period,
     this.endedAt,
+    this.closeAt,
+    this.autoLateAfterMinutes,
   }) : assert(
          type == SessionType.period ? period != null : period == null,
          'PERIOD 세션에만 교시가 있다',
@@ -30,4 +32,11 @@ class Session {
   final SessionStatus status;
   final DateTime startedAt;
   final DateTime? endedAt;
+
+  /// P0-1 수집 창 마감(선언적). null = 수동 종료까지 무기한.
+  /// 판정 권위는 서버 — 이 값은 카운트다운 표시용.
+  final DateTime? closeAt;
+
+  /// 시작 후 N분 이후 체크인 = 지각 자동 판정. null = 자동 지각 없음.
+  final int? autoLateAfterMinutes;
 }

@@ -35,6 +35,7 @@ import '../../domain/usecases/confirm_password_reset.dart';
 import '../../domain/usecases/check_in_by_qr.dart';
 import '../../domain/usecases/create_students.dart';
 import '../../domain/usecases/end_session.dart';
+import '../../domain/usecases/extend_session.dart';
 import '../../domain/usecases/issue_link_code.dart';
 import '../../domain/usecases/parse_student_roster_input.dart';
 import '../../domain/usecases/remove_student_from_class.dart';
@@ -120,6 +121,10 @@ final startSessionProvider = Provider<StartSession>(
 
 final endSessionProvider = Provider<EndSession>(
   (ref) => EndSession(ref.watch(sessionRepositoryProvider)),
+);
+
+final extendSessionProvider = Provider<ExtendSession>(
+  (ref) => ExtendSession(ref.watch(sessionRepositoryProvider)),
 );
 
 final getActiveSessionProvider = Provider<GetActiveSession>(

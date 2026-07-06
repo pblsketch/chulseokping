@@ -19,6 +19,10 @@ _SessionDto _$SessionDtoFromJson(Map<String, dynamic> json) => _SessionDto(
   endedAt: json['ended_at'] == null
       ? null
       : DateTime.parse(json['ended_at'] as String),
+  closeAt: json['close_at'] == null
+      ? null
+      : DateTime.parse(json['close_at'] as String),
+  autoLateAfterMinutes: (json['auto_late_after_minutes'] as num?)?.toInt(),
 );
 
 Map<String, dynamic> _$SessionDtoToJson(_SessionDto instance) =>
@@ -33,4 +37,6 @@ Map<String, dynamic> _$SessionDtoToJson(_SessionDto instance) =>
       'status': instance.status,
       'started_at': instance.startedAt.toIso8601String(),
       'ended_at': instance.endedAt?.toIso8601String(),
+      'close_at': instance.closeAt?.toIso8601String(),
+      'auto_late_after_minutes': instance.autoLateAfterMinutes,
     };

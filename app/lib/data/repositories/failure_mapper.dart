@@ -15,6 +15,9 @@ Failure mapToFailure(Object error) {
       403 when code == 'consent_required' => const ConsentRequiredFailure(),
       403 => ValidationFailure(_korean(code) ?? '권한이 없어요'),
       404 => ValidationFailure(_korean(code) ?? '대상을 찾을 수 없어요'),
+      410 when code == 'session_closed' => const ValidationFailure(
+        '출석 수집 시간이 끝났어요 — 선생님께 말씀해 주세요',
+      ),
       410 => const ValidationFailure('세션이 종료됐어요'),
       422 => const ValidationFailure('코드가 만료됐어요 — 다시 스캔해 주세요'),
       _ => ServerFailure('서버 오류가 발생했어요 (${error.status})'),

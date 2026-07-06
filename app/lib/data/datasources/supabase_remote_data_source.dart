@@ -169,12 +169,16 @@ class SupabaseRemoteDataSource {
   }
 
   // ── Sessions ──
+  /// P0-1: 시간창은 서버가 찍은 started_at 기준으로 계산한다(클라 시계 불신).
+  /// insert 후 반환된 started_at으로 close_at을 산출해 갱신 — 판정 권위는 어차피 서버 now().
   Future<SessionDto> startSession({
     required String classId,
     required String teacherId,
     required String type,
     int? period,
     required String mode,
+    int? closeMinutes,
+    int? autoLateMinutes,
   }) async {
     final row = await _client
         .from('sessions')
@@ -187,7 +191,50 @@ class SupabaseRemoteDataSource {
         })
         .select()
         .single();
-    return SessionDto.fromJson(row);
+    if (closeMinutes == null && autoLateMinutes == null) {
+      return SessionDto.fromJson(row);
+    }
+
+    final startedAt = DateTime.parse(row['started_at'] as String);
+    final updated = await _client
+        .from('sessions')
+        .update({
+          if (closeMinutes != null)
+            'close_at': startedAt
+                .add(Duration(minutes: closeMinutes))
+                .toIso8601String(),
+          'auto_late_after_minutes': ?autoLateMinutes,
+        })
+        .eq('id', row['id'] as String)
+        .select()
+        .single();
+    return SessionDto.fromJson(updated);
+  }
+
+  /// P0-1: 수집 창 연장 — 현재 close_at 기준 +byMinutes (창 없는 세션은 그대로 반환)
+  Future<SessionDto> extendSession(
+    String sessionId, {
+    required int byMinutes,
+  }) async {
+    final row = await _client
+        .from('sessions')
+        .select()
+        .eq('id', sessionId)
+        .single();
+    final closeAt = row['close_at'] as String?;
+    if (closeAt == null) return SessionDto.fromJson(row);
+
+    final updated = await _client
+        .from('sessions')
+        .update({
+          'close_at': DateTime.parse(
+            closeAt,
+          ).add(Duration(minutes: byMinutes)).toIso8601String(),
+        })
+        .eq('id', sessionId)
+        .select()
+        .single();
+    return SessionDto.fromJson(updated);
   }
 
   Future<SessionDto> endSession(String sessionId) async {

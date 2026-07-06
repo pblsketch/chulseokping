@@ -89,7 +89,13 @@ export interface ActiveSession {
   type: "HOMEROOM" | "PERIOD";
   period: number | null;
   status: string;
+  started_at: string;
+  close_at: string | null;
+  auto_late_after_minutes: number | null;
 }
+
+const SESSION_COLUMNS =
+  "id, class_id, type, period, status, started_at, close_at, auto_late_after_minutes";
 
 /** 활성 세션 로드 (BE-5: ENDED 세션 거부) */
 export async function loadActiveSession(
@@ -98,7 +104,7 @@ export async function loadActiveSession(
 ): Promise<ActiveSession | null> {
   const { data } = await svc
     .from("sessions")
-    .select("id, class_id, type, period, status")
+    .select(SESSION_COLUMNS)
     .eq("id", sessionId)
     .eq("status", "ACTIVE")
     .maybeSingle();
@@ -112,13 +118,38 @@ export async function loadActiveSessionOfClass(
 ): Promise<ActiveSession | null> {
   const { data } = await svc
     .from("sessions")
-    .select("id, class_id, type, period, status")
+    .select(SESSION_COLUMNS)
     .eq("class_id", classId)
     .eq("status", "ACTIVE")
     .order("started_at", { ascending: false })
     .limit(1)
     .maybeSingle();
   return data as ActiveSession | null;
+}
+
+export type TimeVerdict = "present" | "late" | "closed";
+
+/**
+ * P0-1 시간창 판정 — "닫힘"의 진실은 타이머가 아니라 서버 시각 비교 (RESEARCH_TIME_WINDOW §3).
+ * close_at 이후 = closed(410), auto_late_after_minutes 경과 = late, 그 외 present.
+ * 클라이언트 시계는 신뢰하지 않는다 — 호출부는 반드시 서버 now로 판정.
+ */
+export function sessionTimeVerdict(
+  session: Pick<
+    ActiveSession,
+    "started_at" | "close_at" | "auto_late_after_minutes"
+  >,
+  now = new Date(),
+): TimeVerdict {
+  if (session.close_at !== null && now >= new Date(session.close_at)) {
+    return "closed";
+  }
+  if (session.auto_late_after_minutes !== null) {
+    const lateFrom = new Date(session.started_at).getTime() +
+      session.auto_late_after_minutes * 60_000;
+    if (now.getTime() >= lateFrom) return "late";
+  }
+  return "present";
 }
 
 /** PI-2: 동의 미확인 학생은 서버가 수집 거부 */
@@ -164,6 +195,8 @@ export async function idempotentCheckIn(
     sessionId: string;
     method: "QR" | "PIN" | "BLE" | "MANUAL" | "LIST";
     kioskDeviceId?: string;
+    /** P0-1: 시간창 판정 결과. late는 사유 미확정으로 기록 — 확정은 교사 몫 */
+    status?: "present" | "late";
   },
 ): Promise<CheckInResult> {
   const { data: inserted, error } = await svc
@@ -173,7 +206,7 @@ export async function idempotentCheckIn(
       class_id: args.classId,
       session_id: args.sessionId,
       method: args.method,
-      status: "present",
+      status: args.status ?? "present",
       kiosk_device_id: args.kioskDeviceId ?? null,
     })
     .select()

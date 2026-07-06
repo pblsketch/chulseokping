@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$SessionDto {
 
- String get id;@JsonKey(name: 'class_id') String get classId;@JsonKey(name: 'teacher_id') String get teacherId; String get type; int? get period; DateTime get date; String get mode; String get status;@JsonKey(name: 'started_at') DateTime get startedAt;@JsonKey(name: 'ended_at') DateTime? get endedAt;
+ String get id;@JsonKey(name: 'class_id') String get classId;@JsonKey(name: 'teacher_id') String get teacherId; String get type; int? get period; DateTime get date; String get mode; String get status;@JsonKey(name: 'started_at') DateTime get startedAt;@JsonKey(name: 'ended_at') DateTime? get endedAt;@JsonKey(name: 'close_at') DateTime? get closeAt;@JsonKey(name: 'auto_late_after_minutes') int? get autoLateAfterMinutes;
 /// Create a copy of SessionDto
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -28,16 +28,16 @@ $SessionDtoCopyWith<SessionDto> get copyWith => _$SessionDtoCopyWithImpl<Session
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is SessionDto&&(identical(other.id, id) || other.id == id)&&(identical(other.classId, classId) || other.classId == classId)&&(identical(other.teacherId, teacherId) || other.teacherId == teacherId)&&(identical(other.type, type) || other.type == type)&&(identical(other.period, period) || other.period == period)&&(identical(other.date, date) || other.date == date)&&(identical(other.mode, mode) || other.mode == mode)&&(identical(other.status, status) || other.status == status)&&(identical(other.startedAt, startedAt) || other.startedAt == startedAt)&&(identical(other.endedAt, endedAt) || other.endedAt == endedAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is SessionDto&&(identical(other.id, id) || other.id == id)&&(identical(other.classId, classId) || other.classId == classId)&&(identical(other.teacherId, teacherId) || other.teacherId == teacherId)&&(identical(other.type, type) || other.type == type)&&(identical(other.period, period) || other.period == period)&&(identical(other.date, date) || other.date == date)&&(identical(other.mode, mode) || other.mode == mode)&&(identical(other.status, status) || other.status == status)&&(identical(other.startedAt, startedAt) || other.startedAt == startedAt)&&(identical(other.endedAt, endedAt) || other.endedAt == endedAt)&&(identical(other.closeAt, closeAt) || other.closeAt == closeAt)&&(identical(other.autoLateAfterMinutes, autoLateAfterMinutes) || other.autoLateAfterMinutes == autoLateAfterMinutes));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,classId,teacherId,type,period,date,mode,status,startedAt,endedAt);
+int get hashCode => Object.hash(runtimeType,id,classId,teacherId,type,period,date,mode,status,startedAt,endedAt,closeAt,autoLateAfterMinutes);
 
 @override
 String toString() {
-  return 'SessionDto(id: $id, classId: $classId, teacherId: $teacherId, type: $type, period: $period, date: $date, mode: $mode, status: $status, startedAt: $startedAt, endedAt: $endedAt)';
+  return 'SessionDto(id: $id, classId: $classId, teacherId: $teacherId, type: $type, period: $period, date: $date, mode: $mode, status: $status, startedAt: $startedAt, endedAt: $endedAt, closeAt: $closeAt, autoLateAfterMinutes: $autoLateAfterMinutes)';
 }
 
 
@@ -48,7 +48,7 @@ abstract mixin class $SessionDtoCopyWith<$Res>  {
   factory $SessionDtoCopyWith(SessionDto value, $Res Function(SessionDto) _then) = _$SessionDtoCopyWithImpl;
 @useResult
 $Res call({
- String id,@JsonKey(name: 'class_id') String classId,@JsonKey(name: 'teacher_id') String teacherId, String type, int? period, DateTime date, String mode, String status,@JsonKey(name: 'started_at') DateTime startedAt,@JsonKey(name: 'ended_at') DateTime? endedAt
+ String id,@JsonKey(name: 'class_id') String classId,@JsonKey(name: 'teacher_id') String teacherId, String type, int? period, DateTime date, String mode, String status,@JsonKey(name: 'started_at') DateTime startedAt,@JsonKey(name: 'ended_at') DateTime? endedAt,@JsonKey(name: 'close_at') DateTime? closeAt,@JsonKey(name: 'auto_late_after_minutes') int? autoLateAfterMinutes
 });
 
 
@@ -65,7 +65,7 @@ class _$SessionDtoCopyWithImpl<$Res>
 
 /// Create a copy of SessionDto
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? classId = null,Object? teacherId = null,Object? type = null,Object? period = freezed,Object? date = null,Object? mode = null,Object? status = null,Object? startedAt = null,Object? endedAt = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? classId = null,Object? teacherId = null,Object? type = null,Object? period = freezed,Object? date = null,Object? mode = null,Object? status = null,Object? startedAt = null,Object? endedAt = freezed,Object? closeAt = freezed,Object? autoLateAfterMinutes = freezed,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,classId: null == classId ? _self.classId : classId // ignore: cast_nullable_to_non_nullable
@@ -77,7 +77,9 @@ as DateTime,mode: null == mode ? _self.mode : mode // ignore: cast_nullable_to_n
 as String,status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
 as String,startedAt: null == startedAt ? _self.startedAt : startedAt // ignore: cast_nullable_to_non_nullable
 as DateTime,endedAt: freezed == endedAt ? _self.endedAt : endedAt // ignore: cast_nullable_to_non_nullable
-as DateTime?,
+as DateTime?,closeAt: freezed == closeAt ? _self.closeAt : closeAt // ignore: cast_nullable_to_non_nullable
+as DateTime?,autoLateAfterMinutes: freezed == autoLateAfterMinutes ? _self.autoLateAfterMinutes : autoLateAfterMinutes // ignore: cast_nullable_to_non_nullable
+as int?,
   ));
 }
 
@@ -162,10 +164,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id, @JsonKey(name: 'class_id')  String classId, @JsonKey(name: 'teacher_id')  String teacherId,  String type,  int? period,  DateTime date,  String mode,  String status, @JsonKey(name: 'started_at')  DateTime startedAt, @JsonKey(name: 'ended_at')  DateTime? endedAt)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id, @JsonKey(name: 'class_id')  String classId, @JsonKey(name: 'teacher_id')  String teacherId,  String type,  int? period,  DateTime date,  String mode,  String status, @JsonKey(name: 'started_at')  DateTime startedAt, @JsonKey(name: 'ended_at')  DateTime? endedAt, @JsonKey(name: 'close_at')  DateTime? closeAt, @JsonKey(name: 'auto_late_after_minutes')  int? autoLateAfterMinutes)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _SessionDto() when $default != null:
-return $default(_that.id,_that.classId,_that.teacherId,_that.type,_that.period,_that.date,_that.mode,_that.status,_that.startedAt,_that.endedAt);case _:
+return $default(_that.id,_that.classId,_that.teacherId,_that.type,_that.period,_that.date,_that.mode,_that.status,_that.startedAt,_that.endedAt,_that.closeAt,_that.autoLateAfterMinutes);case _:
   return orElse();
 
 }
@@ -183,10 +185,10 @@ return $default(_that.id,_that.classId,_that.teacherId,_that.type,_that.period,_
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id, @JsonKey(name: 'class_id')  String classId, @JsonKey(name: 'teacher_id')  String teacherId,  String type,  int? period,  DateTime date,  String mode,  String status, @JsonKey(name: 'started_at')  DateTime startedAt, @JsonKey(name: 'ended_at')  DateTime? endedAt)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id, @JsonKey(name: 'class_id')  String classId, @JsonKey(name: 'teacher_id')  String teacherId,  String type,  int? period,  DateTime date,  String mode,  String status, @JsonKey(name: 'started_at')  DateTime startedAt, @JsonKey(name: 'ended_at')  DateTime? endedAt, @JsonKey(name: 'close_at')  DateTime? closeAt, @JsonKey(name: 'auto_late_after_minutes')  int? autoLateAfterMinutes)  $default,) {final _that = this;
 switch (_that) {
 case _SessionDto():
-return $default(_that.id,_that.classId,_that.teacherId,_that.type,_that.period,_that.date,_that.mode,_that.status,_that.startedAt,_that.endedAt);case _:
+return $default(_that.id,_that.classId,_that.teacherId,_that.type,_that.period,_that.date,_that.mode,_that.status,_that.startedAt,_that.endedAt,_that.closeAt,_that.autoLateAfterMinutes);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -203,10 +205,10 @@ return $default(_that.id,_that.classId,_that.teacherId,_that.type,_that.period,_
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id, @JsonKey(name: 'class_id')  String classId, @JsonKey(name: 'teacher_id')  String teacherId,  String type,  int? period,  DateTime date,  String mode,  String status, @JsonKey(name: 'started_at')  DateTime startedAt, @JsonKey(name: 'ended_at')  DateTime? endedAt)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id, @JsonKey(name: 'class_id')  String classId, @JsonKey(name: 'teacher_id')  String teacherId,  String type,  int? period,  DateTime date,  String mode,  String status, @JsonKey(name: 'started_at')  DateTime startedAt, @JsonKey(name: 'ended_at')  DateTime? endedAt, @JsonKey(name: 'close_at')  DateTime? closeAt, @JsonKey(name: 'auto_late_after_minutes')  int? autoLateAfterMinutes)?  $default,) {final _that = this;
 switch (_that) {
 case _SessionDto() when $default != null:
-return $default(_that.id,_that.classId,_that.teacherId,_that.type,_that.period,_that.date,_that.mode,_that.status,_that.startedAt,_that.endedAt);case _:
+return $default(_that.id,_that.classId,_that.teacherId,_that.type,_that.period,_that.date,_that.mode,_that.status,_that.startedAt,_that.endedAt,_that.closeAt,_that.autoLateAfterMinutes);case _:
   return null;
 
 }
@@ -218,7 +220,7 @@ return $default(_that.id,_that.classId,_that.teacherId,_that.type,_that.period,_
 @JsonSerializable()
 
 class _SessionDto extends SessionDto {
-  const _SessionDto({required this.id, @JsonKey(name: 'class_id') required this.classId, @JsonKey(name: 'teacher_id') required this.teacherId, required this.type, this.period, required this.date, required this.mode, required this.status, @JsonKey(name: 'started_at') required this.startedAt, @JsonKey(name: 'ended_at') this.endedAt}): super._();
+  const _SessionDto({required this.id, @JsonKey(name: 'class_id') required this.classId, @JsonKey(name: 'teacher_id') required this.teacherId, required this.type, this.period, required this.date, required this.mode, required this.status, @JsonKey(name: 'started_at') required this.startedAt, @JsonKey(name: 'ended_at') this.endedAt, @JsonKey(name: 'close_at') this.closeAt, @JsonKey(name: 'auto_late_after_minutes') this.autoLateAfterMinutes}): super._();
   factory _SessionDto.fromJson(Map<String, dynamic> json) => _$SessionDtoFromJson(json);
 
 @override final  String id;
@@ -231,6 +233,8 @@ class _SessionDto extends SessionDto {
 @override final  String status;
 @override@JsonKey(name: 'started_at') final  DateTime startedAt;
 @override@JsonKey(name: 'ended_at') final  DateTime? endedAt;
+@override@JsonKey(name: 'close_at') final  DateTime? closeAt;
+@override@JsonKey(name: 'auto_late_after_minutes') final  int? autoLateAfterMinutes;
 
 /// Create a copy of SessionDto
 /// with the given fields replaced by the non-null parameter values.
@@ -245,16 +249,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _SessionDto&&(identical(other.id, id) || other.id == id)&&(identical(other.classId, classId) || other.classId == classId)&&(identical(other.teacherId, teacherId) || other.teacherId == teacherId)&&(identical(other.type, type) || other.type == type)&&(identical(other.period, period) || other.period == period)&&(identical(other.date, date) || other.date == date)&&(identical(other.mode, mode) || other.mode == mode)&&(identical(other.status, status) || other.status == status)&&(identical(other.startedAt, startedAt) || other.startedAt == startedAt)&&(identical(other.endedAt, endedAt) || other.endedAt == endedAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _SessionDto&&(identical(other.id, id) || other.id == id)&&(identical(other.classId, classId) || other.classId == classId)&&(identical(other.teacherId, teacherId) || other.teacherId == teacherId)&&(identical(other.type, type) || other.type == type)&&(identical(other.period, period) || other.period == period)&&(identical(other.date, date) || other.date == date)&&(identical(other.mode, mode) || other.mode == mode)&&(identical(other.status, status) || other.status == status)&&(identical(other.startedAt, startedAt) || other.startedAt == startedAt)&&(identical(other.endedAt, endedAt) || other.endedAt == endedAt)&&(identical(other.closeAt, closeAt) || other.closeAt == closeAt)&&(identical(other.autoLateAfterMinutes, autoLateAfterMinutes) || other.autoLateAfterMinutes == autoLateAfterMinutes));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,classId,teacherId,type,period,date,mode,status,startedAt,endedAt);
+int get hashCode => Object.hash(runtimeType,id,classId,teacherId,type,period,date,mode,status,startedAt,endedAt,closeAt,autoLateAfterMinutes);
 
 @override
 String toString() {
-  return 'SessionDto(id: $id, classId: $classId, teacherId: $teacherId, type: $type, period: $period, date: $date, mode: $mode, status: $status, startedAt: $startedAt, endedAt: $endedAt)';
+  return 'SessionDto(id: $id, classId: $classId, teacherId: $teacherId, type: $type, period: $period, date: $date, mode: $mode, status: $status, startedAt: $startedAt, endedAt: $endedAt, closeAt: $closeAt, autoLateAfterMinutes: $autoLateAfterMinutes)';
 }
 
 
@@ -265,7 +269,7 @@ abstract mixin class _$SessionDtoCopyWith<$Res> implements $SessionDtoCopyWith<$
   factory _$SessionDtoCopyWith(_SessionDto value, $Res Function(_SessionDto) _then) = __$SessionDtoCopyWithImpl;
 @override @useResult
 $Res call({
- String id,@JsonKey(name: 'class_id') String classId,@JsonKey(name: 'teacher_id') String teacherId, String type, int? period, DateTime date, String mode, String status,@JsonKey(name: 'started_at') DateTime startedAt,@JsonKey(name: 'ended_at') DateTime? endedAt
+ String id,@JsonKey(name: 'class_id') String classId,@JsonKey(name: 'teacher_id') String teacherId, String type, int? period, DateTime date, String mode, String status,@JsonKey(name: 'started_at') DateTime startedAt,@JsonKey(name: 'ended_at') DateTime? endedAt,@JsonKey(name: 'close_at') DateTime? closeAt,@JsonKey(name: 'auto_late_after_minutes') int? autoLateAfterMinutes
 });
 
 
@@ -282,7 +286,7 @@ class __$SessionDtoCopyWithImpl<$Res>
 
 /// Create a copy of SessionDto
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? classId = null,Object? teacherId = null,Object? type = null,Object? period = freezed,Object? date = null,Object? mode = null,Object? status = null,Object? startedAt = null,Object? endedAt = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? classId = null,Object? teacherId = null,Object? type = null,Object? period = freezed,Object? date = null,Object? mode = null,Object? status = null,Object? startedAt = null,Object? endedAt = freezed,Object? closeAt = freezed,Object? autoLateAfterMinutes = freezed,}) {
   return _then(_SessionDto(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,classId: null == classId ? _self.classId : classId // ignore: cast_nullable_to_non_nullable
@@ -294,7 +298,9 @@ as DateTime,mode: null == mode ? _self.mode : mode // ignore: cast_nullable_to_n
 as String,status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
 as String,startedAt: null == startedAt ? _self.startedAt : startedAt // ignore: cast_nullable_to_non_nullable
 as DateTime,endedAt: freezed == endedAt ? _self.endedAt : endedAt // ignore: cast_nullable_to_non_nullable
-as DateTime?,
+as DateTime?,closeAt: freezed == closeAt ? _self.closeAt : closeAt // ignore: cast_nullable_to_non_nullable
+as DateTime?,autoLateAfterMinutes: freezed == autoLateAfterMinutes ? _self.autoLateAfterMinutes : autoLateAfterMinutes // ignore: cast_nullable_to_non_nullable
+as int?,
   ));
 }
 

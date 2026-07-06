@@ -9,6 +9,7 @@ import {
   loadActiveSession,
   parseCheckInBody,
   serviceClient,
+  sessionTimeVerdict,
 } from "../_shared/checkin.ts";
 
 Deno.serve(async (req) => {
@@ -29,6 +30,10 @@ Deno.serve(async (req) => {
 
   const session = await loadActiveSession(svc, sessionId);
   if (!session) return json(410, { error: "session_not_active" });
+
+  // P0-1: 수집 창 판정 — 서버 now() 기준
+  const verdict = sessionTimeVerdict(session);
+  if (verdict === "closed") return json(410, { error: "session_closed" });
 
   // 등록된(미revoke) 키오스크 기기 + class 매칭 (BE-3)
   const { data: device } = await svc
@@ -52,6 +57,7 @@ Deno.serve(async (req) => {
     sessionId,
     method: "BLE",
     kioskDeviceId: device.id,
+    status: verdict,
   });
   return json(200, { created: result.created, record: result.record });
 });

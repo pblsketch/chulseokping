@@ -8,6 +8,7 @@ import {
   loadActiveSession,
   parseCheckInBody,
   serviceClient,
+  sessionTimeVerdict,
 } from "../_shared/checkin.ts";
 
 Deno.serve(async (req) => {
@@ -25,6 +26,10 @@ Deno.serve(async (req) => {
 
   const session = await loadActiveSession(svc, sessionId);
   if (!session) return json(410, { error: "session_not_active" });
+
+  // P0-1: 수집 창 판정 — 서버 now() 기준 (cron 스윕이 늦어도 여기서 차단)
+  const verdict = sessionTimeVerdict(session);
+  if (verdict === "closed") return json(410, { error: "session_closed" });
 
   const { data: secret } = await svc
     .from("class_secrets")
@@ -44,6 +49,7 @@ Deno.serve(async (req) => {
     classId: session.class_id,
     sessionId,
     method: "QR",
+    status: verdict,
   });
   return json(200, { created: result.created, record: result.record });
 });

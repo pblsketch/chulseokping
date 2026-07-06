@@ -21,6 +21,8 @@ abstract class SessionDto with _$SessionDto {
     required String status,
     @JsonKey(name: 'started_at') required DateTime startedAt,
     @JsonKey(name: 'ended_at') DateTime? endedAt,
+    @JsonKey(name: 'close_at') DateTime? closeAt,
+    @JsonKey(name: 'auto_late_after_minutes') int? autoLateAfterMinutes,
   }) = _SessionDto;
 
   factory SessionDto.fromJson(Map<String, dynamic> json) =>
@@ -37,5 +39,7 @@ abstract class SessionDto with _$SessionDto {
     status: SessionStatus.fromWire(status),
     startedAt: startedAt,
     endedAt: endedAt,
+    closeAt: closeAt,
+    autoLateAfterMinutes: autoLateAfterMinutes,
   );
 }

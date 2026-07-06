@@ -13,9 +13,11 @@ import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/utils/rotating_code.dart';
 import '../../domain/entities/attendance_record.dart';
+import '../../domain/entities/session.dart';
 import '../../domain/entities/student.dart';
 import '../../domain/value_objects/absence_reason.dart';
 import '../../domain/value_objects/attendance_status.dart';
+import '../shared/roster_providers.dart';
 import '../shared/status_chip.dart';
 import 'session_roster.dart';
 import 'teacher_beacon_controller.dart';
@@ -103,6 +105,7 @@ class SessionPage extends ConsumerWidget {
                 RotatingQrCard(sessionId: sessionId, classId: classId),
                 const SizedBox(height: AppSpacing.sm),
                 TeacherBeaconBadge(classId: classId),
+                SessionWindowBar(sessionId: sessionId, classId: classId),
               ],
             ),
           ),
@@ -163,6 +166,92 @@ class _RosterList extends ConsumerWidget {
           ),
         );
       },
+    );
+  }
+}
+
+/// P0-1: 수집 창 카운트다운 + 연장. 표시 전용 — 마감 판정 권위는 서버(now vs close_at).
+/// 창 없는(수동 종료) 세션에서는 아무것도 그리지 않는다.
+class SessionWindowBar extends ConsumerStatefulWidget {
+  const SessionWindowBar({
+    super.key,
+    required this.sessionId,
+    required this.classId,
+  });
+
+  final String sessionId;
+  final String classId;
+
+  @override
+  ConsumerState<SessionWindowBar> createState() => _SessionWindowBarState();
+}
+
+class _SessionWindowBarState extends ConsumerState<SessionWindowBar> {
+  Timer? _timer;
+  bool _extending = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) => setState(() {}));
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _extend() async {
+    setState(() => _extending = true);
+    final result = await ref.read(extendSessionProvider).call(widget.sessionId);
+    if (!mounted) return;
+    setState(() => _extending = false);
+    if (result case Err(:final failure)) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(failure.message)));
+    }
+    // 성공 시 sessions Realtime 스트림이 새 close_at을 밀어준다.
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final active = ref.watch(activeSessionProvider(widget.classId)).value;
+    final Session? session = (active != null && active.id == widget.sessionId)
+        ? active
+        : null;
+    final closeAt = session?.closeAt;
+    if (closeAt == null) return const SizedBox.shrink();
+
+    final remaining = closeAt.difference(DateTime.now());
+    final expired = remaining.isNegative;
+    final mm = remaining.inMinutes.toString().padLeft(2, '0');
+    final ss = (remaining.inSeconds % 60).toString().padLeft(2, '0');
+    final color = expired
+        ? AppColors.danger
+        : (remaining.inMinutes < 2
+              ? AppColors.warning
+              : AppColors.textSecondary);
+
+    return Padding(
+      padding: const EdgeInsets.only(top: AppSpacing.sm),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.timer_outlined, size: 16, color: color),
+          const SizedBox(width: AppSpacing.xs),
+          Text(
+            expired ? '수집 시간이 끝났어요 — 곧 자동 종료돼요' : '수집 마감까지 $mm:$ss',
+            style: AppTypography.caption.copyWith(color: color),
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          TextButton(
+            onPressed: _extending ? null : _extend,
+            child: const Text('+5분 연장'),
+          ),
+        ],
+      ),
     );
   }
 }
