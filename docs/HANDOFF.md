@@ -7,7 +7,7 @@
 ## 📋 붙여넣기 프롬프트 (이 블록을 새 세션에 그대로 입력)
 
 ```
-너는 "출석핑" K-12 출결 앱을 이어서 개발한다. 작업 디렉토리는 E:\github\chulseokping, 브랜치는 feat/m0-foundation 이다.
+너는 "출석핑" K-12 출결 앱을 이어서 개발한다. 작업 디렉토리는 E:\github\chulseokping, 기본 브랜치는 main이다 (작업은 main에서 딴 새 기능 브랜치에서 — 기본 브랜치 직접 작업 금지).
 
 [먼저 읽어라 — 순서대로]
 1. CLAUDE.md, AGENTS.md              (개발 규칙·황금 규칙 — SSOT)
@@ -47,7 +47,7 @@
 - **구현**: M0~M5. BLE 자동 출석 실기기 성공(2026-07-06). M5 = 교사 회원가입(이메일 OTP)·비밀번호 재설정(recovery OTP)·학생 일괄 생성(create_students)·연결 코드 발급/재발급(issue_link_code)·학생 기기 연결(redeem_link_code + StudentLinkPage)·동의 생성 통합(guardian_consented).
 - **M5 계약 요지**: 연결 코드 = 32자 알파벳(I/O/0/1 제외)×12자(60bit), DB엔 sha256 해시만, 48시간·1회용, redeem 시 내부 비밀번호 회전. 학생 내부 이메일 `stu-<uuid>@student.chulseokping.internal`.
 - **커밋 이력**: `d1a6c78`(핸드오프+백로그) ← `55bf90a`(LICENSE+README) ← `806c511`(조사 문서 6건)
-- **오픈소스 준비 완료**: Apache-2.0, README 배포자 법적 고지, 시크릿 스캔 통과. 남은 것: main 병합·푸시·저장소 Public 전환(사용자 명시 요청 시).
+- **오픈소스 공개 완료(2026-07-06)**: Apache-2.0 · README 배포자 법적 고지 · 전체 히스토리 시크릿 스캔 통과 · 커밋 신원 재작성(pblsketch noreply, 개인 이메일 제거). 저장소 Public 전환, main 기본 브랜치, SECURITY.md, secret scanning + push protection, 비공개 취약점 신고(PVR)까지 완료.
 
 ## ⚠ 함정 목록 (실기기에서 피 흘려 배운 것)
 
