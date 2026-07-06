@@ -15,6 +15,8 @@ import '../../core/utils/rotating_code.dart';
 import '../../domain/entities/attendance_record.dart';
 import '../../domain/entities/session.dart';
 import '../../domain/entities/student.dart';
+import '../../domain/entities/suspicious_flag.dart';
+import '../../domain/usecases/confirm_headcount.dart';
 import '../../domain/value_objects/absence_reason.dart';
 import '../../domain/value_objects/attendance_status.dart';
 import '../shared/roster_providers.dart';
@@ -49,7 +51,14 @@ final classSecretProvider = FutureProvider.family<String, String>((
   return result.fold((secret) => secret, (failure) => throw failure.message);
 });
 
-/// 세션 대시보드 (TE-2 실시간 / TE-3 수동 수정 / KO-2 회전 QR).
+/// P0-3: 세션 의심 신호 (미확인 우선) — 배지·목록용.
+final sessionFlagsProvider = FutureProvider.autoDispose
+    .family<List<SuspiciousFlag>, String>((ref, sessionId) async {
+      final result = await ref.watch(getSessionFlagsProvider).call(sessionId);
+      return result.fold((flags) => flags, (failure) => throw failure.message);
+    });
+
+/// 세션 대시보드 (TE-2 실시간 / TE-3 수동 수정 / KO-2 회전 QR / P0-3 헤드카운트).
 class SessionPage extends ConsumerWidget {
   const SessionPage({
     super.key,
@@ -60,7 +69,42 @@ class SessionPage extends ConsumerWidget {
   final String sessionId;
   final String classId;
 
+  /// P0-3: 종료 전 헤드카운트 원탭 확인 — 대학 '불시 점검'의 UX 내재화.
+  /// 불일치면 세션을 유지한 채 명렬표에서 정정하게 한다 (자동 결석 확정 없음).
   Future<void> _endSession(BuildContext context, WidgetRef ref) async {
+    final records = ref.read(liveRecordsProvider(sessionId)).value ?? [];
+    final autoCount = ConfirmHeadcount.autoCount(records);
+
+    if (autoCount > 0) {
+      final decision = await showDialog<({bool matches, int? observed})>(
+        context: context,
+        builder: (context) => _HeadcountDialog(autoCount: autoCount),
+      );
+      if (decision == null || !context.mounted) return; // 취소 — 세션 유지
+
+      final confirm = await ref
+          .read(confirmHeadcountProvider)
+          .call(
+            sessionId: sessionId,
+            matches: decision.matches,
+            observedCount: decision.observed,
+          );
+      if (!context.mounted) return;
+      if (confirm case Err(:final failure)) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(failure.message)));
+        return;
+      }
+      if (!decision.matches) {
+        ref.invalidate(sessionFlagsProvider(sessionId));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('의심 신호로 기록했어요 — 명단에서 정정한 뒤 다시 종료하세요')),
+        );
+        return; // 세션 유지 → 아래 명렬표에서 수동 정정
+      }
+    }
+
     final result = await ref.read(endSessionProvider).call(sessionId);
     if (!context.mounted) return;
     switch (result) {
@@ -89,6 +133,7 @@ class SessionPage extends ConsumerWidget {
       appBar: AppBar(
         title: Text('출석 $presentCount / $total', style: AppTypography.h2),
         actions: [
+          _FlagsBadge(sessionId: sessionId),
           TextButton.icon(
             onPressed: () => _endSession(context, ref),
             icon: const Icon(Icons.stop_circle_outlined),
@@ -166,6 +211,195 @@ class _RosterList extends ConsumerWidget {
           ),
         );
       },
+    );
+  }
+}
+
+/// P0-3: 마감 헤드카운트 원탭 — "자동 출석 N명, 실제 인원과 맞나요?"
+class _HeadcountDialog extends StatefulWidget {
+  const _HeadcountDialog({required this.autoCount});
+
+  final int autoCount;
+
+  @override
+  State<_HeadcountDialog> createState() => _HeadcountDialogState();
+}
+
+class _HeadcountDialogState extends State<_HeadcountDialog> {
+  bool _askObserved = false;
+  final _observedController = TextEditingController();
+
+  @override
+  void dispose() {
+    _observedController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('출석 인원 확인'),
+      content: _askObserved
+          ? Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const Text(
+                  '실제 교실 인원을 입력해 주세요 (선택).\n의심 신호로 기록되고, 출석은 명단에서 정정하면 돼요.',
+                  style: AppTypography.caption,
+                ),
+                const SizedBox(height: AppSpacing.md),
+                TextField(
+                  controller: _observedController,
+                  keyboardType: TextInputType.number,
+                  autofocus: true,
+                  decoration: const InputDecoration(labelText: '실제 인원 수'),
+                ),
+              ],
+            )
+          : Text(
+              'QR·BLE 자동 출석이 ${widget.autoCount}명이에요.\n'
+              '실제 교실 인원과 맞나요?\n\n'
+              '(폰만 두 대 들고 온 대리출석은 이 확인으로만 잡을 수 있어요)',
+              style: AppTypography.body,
+            ),
+      actions: _askObserved
+          ? [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('취소'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(context, (
+                  matches: false,
+                  observed: int.tryParse(_observedController.text.trim()),
+                )),
+                child: const Text('기록하고 명단 확인'),
+              ),
+            ]
+          : [
+              TextButton(
+                onPressed: () => setState(() => _askObserved = true),
+                child: const Text('아니요, 달라요'),
+              ),
+              FilledButton(
+                onPressed: () =>
+                    Navigator.pop(context, (matches: true, observed: null)),
+                child: const Text('네, 맞아요 — 종료'),
+              ),
+            ],
+    );
+  }
+}
+
+/// P0-3: 의심 신호 배지 — 미확인 신호가 있을 때만 표시 (로그-온리, 판단은 교사).
+class _FlagsBadge extends ConsumerWidget {
+  const _FlagsBadge({required this.sessionId});
+
+  final String sessionId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final flags = ref.watch(sessionFlagsProvider(sessionId)).value ?? const [];
+    final unreviewed = flags.where((f) => !f.reviewed).length;
+    if (unreviewed == 0) return const SizedBox.shrink();
+
+    return TextButton.icon(
+      onPressed: () => showDialog<void>(
+        context: context,
+        builder: (context) => _FlagsDialog(sessionId: sessionId),
+      ),
+      icon: const Icon(Icons.warning_amber, color: AppColors.warning),
+      label: Text(
+        '의심 $unreviewed',
+        style: AppTypography.bodyStrong.copyWith(color: AppColors.warning),
+      ),
+    );
+  }
+}
+
+class _FlagsDialog extends ConsumerWidget {
+  const _FlagsDialog({required this.sessionId});
+
+  final String sessionId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final flags = ref.watch(sessionFlagsProvider(sessionId));
+    return AlertDialog(
+      title: const Text('의심 신호'),
+      content: SizedBox(
+        width: 420,
+        child: flags.when(
+          loading: () => const SizedBox(
+            height: 100,
+            child: Center(child: CircularProgressIndicator()),
+          ),
+          error: (error, _) => Text('$error', style: AppTypography.body),
+          data: (list) => list.isEmpty
+              ? const Padding(
+                  padding: EdgeInsets.all(AppSpacing.lg),
+                  child: Text('의심 신호가 없어요', style: AppTypography.body),
+                )
+              : SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Padding(
+                        padding: EdgeInsets.only(bottom: AppSpacing.sm),
+                        child: Text(
+                          '출석을 막지는 않아요 — 확인 후 필요하면 명단에서 정정하세요.',
+                          style: AppTypography.caption,
+                        ),
+                      ),
+                      for (final flag in list)
+                        ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          title: Text(
+                            flag.label,
+                            style: AppTypography.bodyStrong,
+                          ),
+                          subtitle: Text(
+                            '${flag.createdAt.toLocal()}'.substring(0, 16),
+                            style: AppTypography.caption,
+                          ),
+                          trailing: flag.reviewed
+                              ? Text('확인됨', style: AppTypography.caption)
+                              : TextButton(
+                                  onPressed: () async {
+                                    final result = await ref
+                                        .read(markFlagReviewedProvider)
+                                        .call(flag.id);
+                                    if (!context.mounted) return;
+                                    switch (result) {
+                                      case Ok():
+                                        ref.invalidate(
+                                          sessionFlagsProvider(sessionId),
+                                        );
+                                      case Err(:final failure):
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          SnackBar(
+                                            content: Text(failure.message),
+                                          ),
+                                        );
+                                    }
+                                  },
+                                  child: const Text('확인'),
+                                ),
+                        ),
+                    ],
+                  ),
+                ),
+        ),
+      ),
+      actions: [
+        FilledButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('닫기'),
+        ),
+      ],
     );
   }
 }

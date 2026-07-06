@@ -29,8 +29,10 @@
 - suspicious_flags 추가: `MULTI_ACCOUNT_SAME_DEVICE` / `RAPID_DEVICE_REBIND` / `SHARED_DEVICE`(형제 공유는 정상 케이스 多 — 차단 금지) / `UNBOUND_DEVICE_CHECKIN`
 - 상세 설계: RESEARCH_DEVICE_BINDING.md §B-1, B-2
 
-### 3. 세션 마감 헤드카운트 확인 (대리출석의 유일한 실효 대책)
+### 3. 세션 마감 헤드카운트 확인 (대리출석의 유일한 실효 대책) ✅ 구현 완료 (2026-07-06)
 세션 종료 시 교사 태블릿에 "자동 출석 N명 — 실제 인원과 맞나요?" 원탭 스텝. "아니오" → 명렬표 뷰. 대학의 '불시 점검' 관행을 UX로 내재화. 불일치 시 `CHECKIN_HEADCOUNT_GAP` 플래그(로그-온리).
+
+> 구현: confirm_headcount(집계는 서버 — QR/BLE만) + 종료 다이얼로그(불일치 시 세션 유지·명단 정정 유도, 자동 결석 확정 없음) + 세션 화면 의심 신호 배지·목록(P0-2에서 미룬 suspicious_flags 노출 포함, reviewed 처리). **P0 3종 전부 완료.**
 
 ---
 

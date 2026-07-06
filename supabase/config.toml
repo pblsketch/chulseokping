@@ -435,3 +435,6 @@ verify_jwt = false  # in-function getUser() authenticates (local gateway ES256 l
 
 [functions.approve_device]
 verify_jwt = false  # in-function getUser() authenticates (local gateway ES256 limitation)
+
+[functions.confirm_headcount]
+verify_jwt = false  # in-function getUser() authenticates (local gateway ES256 limitation)

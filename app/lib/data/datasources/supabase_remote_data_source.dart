@@ -360,6 +360,22 @@ class SupabaseRemoteDataSource {
     return (response.data as Map).cast<String, dynamic>();
   }
 
+  /// 세션 의심 신호 (RLS suspicious_flags_teacher_select — 담당 교사만)
+  Future<List<Map<String, dynamic>>> sessionFlags(String sessionId) async {
+    final rows = await _client
+        .from('suspicious_flags')
+        .select('id, student_id, flag_type, evidence, reviewed, created_at')
+        .eq('session_id', sessionId)
+        .order('created_at', ascending: false);
+    return rows;
+  }
+
+  /// 의심 신호 확인 처리 (RLS suspicious_flags_teacher_update)
+  Future<void> markFlagReviewed(String flagId) => _client
+      .from('suspicious_flags')
+      .update({'reviewed': true})
+      .eq('id', flagId);
+
   Stream<List<AttendanceRecordDto>> watchSessionLogs(String sessionId) {
     return _client
         .from('attendance_logs')

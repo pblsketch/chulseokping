@@ -1,5 +1,6 @@
 import '../../core/result/result.dart';
 import '../entities/attendance_record.dart';
+import '../entities/suspicious_flag.dart';
 import '../value_objects/absence_reason.dart';
 import '../value_objects/attendance_status.dart';
 
@@ -51,4 +52,20 @@ abstract interface class AttendanceRepository {
     required int year,
     required int month,
   });
+
+  // ── P0-3 헤드카운트·의심 신호 ──
+
+  /// 세션 마감 헤드카운트 확인 — confirm_headcount Edge Function.
+  /// 집계는 서버가 하고, 불일치는 로그-온리 플래그로만 남는다.
+  Future<Result<void>> confirmHeadcount({
+    required String sessionId,
+    required bool matches,
+    int? observedCount,
+  });
+
+  /// 세션의 의심 신호 목록 (RLS: 담당 교사만)
+  Future<Result<List<SuspiciousFlag>>> sessionFlags(String sessionId);
+
+  /// 의심 신호 확인 처리 (reviewed=true)
+  Future<Result<void>> markFlagReviewed(String flagId);
 }

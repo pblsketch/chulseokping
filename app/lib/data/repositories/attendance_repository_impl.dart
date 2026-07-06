@@ -1,5 +1,6 @@
 import '../../core/result/result.dart';
 import '../../domain/entities/attendance_record.dart';
+import '../../domain/entities/suspicious_flag.dart';
 import '../../domain/repositories/attendance_repository.dart';
 import '../../domain/services/device_identity_store.dart';
 import '../../domain/value_objects/absence_reason.dart';
@@ -95,6 +96,54 @@ class AttendanceRepositoryImpl implements AttendanceRepository {
       'reason_code': reasonCode?.wireName,
       'reason_detail': reasonDetail,
     });
+  }
+
+  @override
+  Future<Result<void>> confirmHeadcount({
+    required String sessionId,
+    required bool matches,
+    int? observedCount,
+  }) async {
+    try {
+      await _remote.invokeCheckIn('confirm_headcount', {
+        'session_id': sessionId,
+        'matches': matches,
+        'observed_count': ?observedCount,
+      });
+      return const Ok(null);
+    } catch (e) {
+      return Err(mapToFailure(e));
+    }
+  }
+
+  @override
+  Future<Result<List<SuspiciousFlag>>> sessionFlags(String sessionId) async {
+    try {
+      final rows = await _remote.sessionFlags(sessionId);
+      return Ok([
+        for (final row in rows)
+          SuspiciousFlag(
+            id: row['id'] as String,
+            flagType: row['flag_type'] as String,
+            studentId: row['student_id'] as String?,
+            evidence: (row['evidence'] as Map?)?.cast<String, dynamic>(),
+            reviewed: row['reviewed'] as bool,
+            createdAt: DateTime.parse(row['created_at'] as String),
+          ),
+      ]);
+    } catch (e) {
+      return Err(mapToFailure(e));
+    }
+  }
+
+  @override
+  Future<Result<void>> markFlagReviewed(String flagId) async {
+    try {
+      await _remote.markFlagReviewed(flagId);
+      return const Ok(null);
+    } catch (e) {
+      return Err(mapToFailure(e));
+    }
   }
 
   @override

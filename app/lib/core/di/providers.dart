@@ -36,6 +36,7 @@ import '../../domain/usecases/check_in_by_pin.dart';
 import '../../domain/usecases/complete_teacher_profile.dart';
 import '../../domain/usecases/create_class.dart';
 import '../../domain/usecases/confirm_guardian_consent.dart';
+import '../../domain/usecases/confirm_headcount.dart';
 import '../../domain/usecases/confirm_password_reset.dart';
 import '../../domain/usecases/check_in_by_qr.dart';
 import '../../domain/usecases/create_students.dart';
@@ -43,6 +44,8 @@ import '../../domain/usecases/end_session.dart';
 import '../../domain/usecases/ensure_device_registered.dart';
 import '../../domain/usecases/extend_session.dart';
 import '../../domain/usecases/get_class_devices.dart';
+import '../../domain/usecases/get_session_flags.dart';
+import '../../domain/usecases/mark_flag_reviewed.dart';
 import '../../domain/usecases/issue_link_code.dart';
 import '../../domain/usecases/parse_student_roster_input.dart';
 import '../../domain/usecases/remove_student_from_class.dart';
@@ -121,6 +124,19 @@ final approveStudentDeviceProvider = Provider<ApproveStudentDevice>(
 
 final revokeStudentDeviceProvider = Provider<RevokeStudentDevice>(
   (ref) => RevokeStudentDevice(ref.watch(deviceRepositoryProvider)),
+);
+
+// ── P0-3 헤드카운트·의심 신호 ──
+final confirmHeadcountProvider = Provider<ConfirmHeadcount>(
+  (ref) => ConfirmHeadcount(ref.watch(attendanceRepositoryProvider)),
+);
+
+final getSessionFlagsProvider = Provider<GetSessionFlags>(
+  (ref) => GetSessionFlags(ref.watch(attendanceRepositoryProvider)),
+);
+
+final markFlagReviewedProvider = Provider<MarkFlagReviewed>(
+  (ref) => MarkFlagReviewed(ref.watch(attendanceRepositoryProvider)),
 );
 
 final rosterRepositoryProvider = Provider<RosterRepository>(

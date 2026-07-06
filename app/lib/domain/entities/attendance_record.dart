@@ -22,8 +22,10 @@ class AttendanceRecord {
     this.updatedAt,
     this.updatedBy,
   }) : assert(
-         status == AttendanceStatus.present ? reason == null : reason != null,
-         '출석이 아닌 상태에는 사유가 필수, 출석에는 사유 없음 (2축 모델)',
+         status == AttendanceStatus.present
+             ? reason == null
+             : (status == AttendanceStatus.late_ || reason != null),
+         '출석=사유 없음, 지각=사유 선택(자동 지각은 미확정 허용, P0-1), 그 외=사유 필수 (2축 모델)',
        );
 
   final String id;
